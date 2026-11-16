@@ -1,0 +1,350 @@
+"""What requirement extraction looks at, and what it keeps.
+
+reqTrace extracts exactly two kinds of item:
+
+- **obligation**: the reader (designer, implementer, user) is told to do or not do
+  something: "shall"/"must" sentences, explicit recommendations and imperatives;
+- **limit**: a specified boundary the product must be operated within, typically a row
+  of an absolute-maximum-ratings or recommended-operating-conditions table.
+
+Everything else, including descriptions of how the device behaves, is deliberately
+left out. The rules here are deterministic, so the decision does not depend on how a
+small model happens to read a sentence; the model only proposes candidates.
+"""
+
+import re
+from collections.abc import Iterable
+from enum import StrEnum
+
+from app.vector_store import ChunkPayload
+
+
+class Kind(StrEnum):
+    OBLIGATION = "obligation"
+    LIMIT = "limit"
+
+
+# Headings of sections that hold neither kind. Matched as whole words against every
+# part of a chunk's heading path, ignoring numbering and case. Configurable through
+# EXTRACTION_SKIP_SECTIONS.
+DEFAULT_SKIP_SECTIONS: tuple[str, ...] = (
+    "revision history",
+    "table of contents",
+    "contents",
+    "features",
+    "applications",
+    "description",
+    "typical characteristics",
+    "electrical characteristics",
+    "switching characteristics",
+    "thermal information",
+    "esd ratings",
+    "timing diagram",
+    "timing diagrams",
+    "register map",
+    "register maps",
+    "registers",
+    "device comparison",
+    "device and documentation support",
+    "documentation support",
+    "related documentation",
+    "support resources",
+    "trademarks",
+    "glossary",
+    "mechanical",
+    "packaging",
+    "orderable",
+    "ordering information",
+    "important notice",
+    "disclaimer",
+    "legal",
+)
+
+_NUMBERING = re.compile(r"^\s*(?:\d+(?:\.\d+)*\.?|[A-Z]\.)\s+")
+_OBLIGATION_WORDS = re.compile(
+    r"\b(?:shall|must|should|required|requires|require|mandatory|recommended(?!\s+operating)|recommends|"
+    r"recommend|need to|needs to|has to|have to|make sure)\b"
+    # Not followed by "(": require('./x') in code is a call, not an obligation.
+    # "Do not", "never", "avoid" and "ensure" count only as instructions at the start of a
+    # sentence (see IMPERATIVE_VERBS): "which do not imply ..." or "this ensures ..." are
+    # descriptions.
+    r"(?!\s*\()",
+    re.IGNORECASE,
+)
+_STRONG_WORDS = re.compile(r"\b(?:shall|must|required|requires|mandatory)\b", re.IGNORECASE)
+# Base-form verbs that start instructions in datasheets and assignments. Words that are
+# mostly references ("see", "refer", "note") are left out on purpose.
+IMPERATIVE_VERBS = frozenset(
+    """
+    add adjust apply attach avoid bring build calibrate call change check choose clean
+    combine commit configure connect cover create declare define delete disable disconnect
+    display do don't drive enable ensure export extract fetch filter follow give ground
+    group handle hide implement import include increase install keep let limit load
+    locate lower make minimize maximize mount move name never open pass place power
+    prefer prevent protect provide pull push put raise reduce remove rename render
+    replace reset return reuse route run save select separate set show solder sort split
+    start stop store submit test tie tighten turn update upload use verify wait
+    wire wrap write read review complete finish prepare study watch
+    """.split()
+)
+# Instructions about how the work is done (testing, version control, submission).
+PROCESS_VERBS = frozenset({"test", "commit", "push", "submit", "upload"})
+# A finite verb right after the first word means it was a subject, not an instruction:
+# "power consumption is ...", "the empty state says so".
+_FINITE_AFTER = re.compile(
+    r"^\S+(?:\s+\S+){0,2}?\s+(?:is|are|was|were|has|have|had|does|can|will|may|says|remains|becomes)\b",
+    re.IGNORECASE,
+)
+# An introductory phrase or clause before the instruction ("Below the summary row, add
+# ...", "Before the lecture, read ..."): anything up to the first comma, if short.
+_LEADING_PHRASE = re.compile(r"^([^,;:]{1,120}),\s*(.+)$", re.DOTALL)
+_LIST_MARKER = re.compile(r"^\s*(?:[-*•●–]|\(?[0-9a-z]{1,2}[.)])\s+", re.IGNORECASE)
+_FOOTNOTE = re.compile(r"^\s*\(\d{1,2}\)\s*")
+_FOOTNOTE_MARK = re.compile(r"\(\d{1,2}\)")
+# Table conditions such as "Over free-air temperature range (unless otherwise noted)".
+_TABLE_CONDITION = re.compile(r"unless otherwise noted|^\s*over\b.{0,60}\brange\b", re.IGNORECASE)
+_SENTENCE = re.compile(r"(?<=[.!?])\s+")
+_WORD = re.compile(r"[A-Za-z']+")
+_NUMBER = re.compile(r"(?<![A-Za-z])[-+−–]?\d+(?:[.,]\d+)?")
+_LIMIT_SECTION = re.compile(
+    r"absolute maximum|maximum rating|recommended operating|operating condition|"
+    r"\blimits?\b|\bratings?\b",
+    re.IGNORECASE,
+)
+_LIMIT_WORDS = re.compile(
+    r"\b(?:max(?:imum)?|min(?:imum)?|not exceed|exceed|up to|at least|at most|no more than|"
+    r"no less than|between|range|below|above)\b",
+    re.IGNORECASE,
+)
+# Timing and switching tables describe bus behaviour, not operating limits; none of their
+# rows is a limit (documented in the README), whatever words a row contains.
+_TIMING_SECTION = re.compile(r"\btiming\b|switching characteristics", re.IGNORECASE)
+# A sentence that only introduces the list or table after it ("Check your work with the
+# following steps.") carries no requirement of its own; the rows after it do.
+_LEAD_IN = re.compile(r"\b(?:the following|as follows)(?:\s+\w+)?\s*[.:]?\s*$", re.IGNORECASE)
+_TEST_INPUT = re.compile(r"^\s*(?:input|expected (?:output|result))\b", re.IGNORECASE)
+# Code listings: declarations, calls with string arguments and arrow functions. (A line
+# ending in ";" is common in prose lists, so it is not taken as a sign of code.)
+_CODE = re.compile(
+    r"\b(?:const|let|var|function|import|export|type|interface|class|def)\s+\w+\s*[=:{(<]"
+    r"|\w+\s*\(\s*['\"]|=>"
+)
+
+
+def _segments(section: str) -> list[str]:
+    return [
+        _NUMBERING.sub("", part).strip().lower() for part in section.split(" > ") if part.strip()
+    ]
+
+
+def skipped_section(section: str, keywords: Iterable[str]) -> str | None:
+    """The heading that puts a chunk out of scope, or None when it is in scope."""
+    patterns = [re.compile(rf"\b{re.escape(k.lower())}\b") for k in keywords if k.strip()]
+    for segment in _segments(section):
+        if any(p.search(segment) for p in patterns):
+            return segment
+    return None
+
+
+def table_columns(chunk: ChunkPayload) -> set[str]:
+    """Lower-case header cells of a table chunk (empty for text chunks)."""
+    if chunk.kind != "table":
+        return set()
+    header = next((line for line in chunk.text.splitlines() if line.strip().startswith("|")), "")
+    return {cell.strip().lower() for cell in header.strip().strip("|").split("|") if cell.strip()}
+
+
+def non_requirement_table(chunk: ChunkPayload) -> str | None:
+    """The kind of table whose rows are never obligations or limits, or None.
+
+    Recognised by the header: test tables, change logs, default-value tables,
+    register and bit-field tables, and troubleshooting tables.
+    """
+    columns = table_columns(chunk)
+    if not columns:
+        return None
+    has = columns.__contains__
+    starts = lambda prefix: any(c.startswith(prefix) for c in columns)  # noqa: E731
+    if has("input") and (starts("expected") or has("output") or has("result")):
+        return "test table"
+    if columns & {"revision", "version"} and columns & {"date", "change", "changes"}:
+        return "change log"
+    if any(c == "default" or c.startswith("default ") for c in columns):
+        return "default values"
+    if (has("bit") or has("bits")) and columns & {"field", "type", "reset"}:
+        return "bit fields"
+    if columns & {"address", "offset"} and columns & {"register", "register name", "reset"}:
+        return "register map"
+    if columns & {"problem", "symptom", "issue"} and columns & {
+        "fix",
+        "solution",
+        "cause",
+        "remedy",
+        "action",
+    }:
+        return "troubleshooting"
+    return None
+
+
+def _instruction_starts(sentence: str) -> list[str]:
+    """Where an instruction could start in a sentence: at its beginning, and after a
+    short introductory phrase that ends with a comma."""
+    sentence = _LIST_MARKER.sub("", sentence).strip()
+    starts = [sentence]
+    match = _LEADING_PHRASE.match(sentence)
+    if match and len(match.group(1).split()) <= 15:
+        starts.append(match.group(2))
+    return starts
+
+
+def instruction_verb(text: str) -> str | None:
+    """The verb an instruction in `text` starts with, or None if there is no instruction.
+
+    A clause counts when its first word is an instruction verb that is not a signal
+    name in capitals and is not followed by a finite verb (then it was a subject).
+    """
+    for sentence in _SENTENCE.split(text.strip()):
+        # A table cell such as "Load capacitance up to 400 pF" starts with a verb-like
+        # noun; an instruction reads as a sentence, so require final punctuation when
+        # the text carries numbers.
+        if _NUMBER.search(sentence) and not sentence.rstrip().endswith((".", "!", "?")):
+            continue
+        for start in _instruction_starts(sentence):
+            words = _WORD.findall(start)
+            if not words:
+                continue
+            first = words[0]
+            if first.lower() == "please" and len(words) > 1:
+                first = words[1]
+            if (
+                first.lower() in IMPERATIVE_VERBS
+                and not (len(first) > 1 and first.isupper())
+                and not _FINITE_AFTER.match(start)
+            ):
+                return first.lower()
+    return None
+
+
+def is_imperative(text: str) -> bool:
+    """True when a sentence of `text` is an instruction, at its start or after a short
+    introductory phrase ("To prevent oxidation, cover ...", "Below the row, add ...")."""
+    return instruction_verb(text) is not None
+
+
+def is_process_instruction(text: str) -> bool:
+    """True for instructions about how the work is done: testing, committing, submitting."""
+    return instruction_verb(text) in PROCESS_VERBS
+
+
+def looks_like_code(text: str) -> bool:
+    """True for code listings: they are examples, never obligations."""
+    return bool(_CODE.search(text))
+
+
+def has_obligation_wording(text: str) -> bool:
+    """True when the text contains obligation or recommendation wording."""
+    return bool(_OBLIGATION_WORDS.search(text))
+
+
+def is_obligation(text: str) -> bool:
+    """An obligation is worded as one, or is an instruction (imperative)."""
+    return has_obligation_wording(text) or is_imperative(text)
+
+
+_UNIT_TYPES = (
+    (re.compile(r"(?:°\s?[CF]\b|\bK\b)"), "environmental"),
+    (re.compile(r"\b(?:[mµunkM]?(?:V|A|W|F)|[kM]?(?:Ω|Ohm))\b"), "electrical"),
+    (re.compile(r"\b(?:[mµun]?s|[kM]?Hz)\b", re.IGNORECASE), "performance"),
+)
+_CELL_SPLIT = re.compile(r"\s*\|\s*")
+
+
+def is_limit_section(section: str) -> bool:
+    """True for ratings and operating-conditions sections, where table rows are limits."""
+    return bool(_LIMIT_SECTION.search(section))
+
+
+def limit_rows(markdown: str) -> list[str]:
+    """The data rows of a ratings table that carry values, each as one line of text.
+
+    Cells repeated by the table parser (a spanning cell copied into its neighbour) are
+    written once.
+    """
+    rows = []
+    lines = [line.strip() for line in markdown.splitlines() if line.strip().startswith("|")]
+    for line in lines[1:]:
+        cells = [c.strip() for c in _CELL_SPLIT.split(line.strip().strip("|")) if c.strip()]
+        if not cells or all(set(c) <= set("-:") for c in cells):
+            continue
+        unique = [c for i, c in enumerate(cells) if i == 0 or c != cells[i - 1]]
+        text = " ".join(unique)
+        if _NUMBER.search(_FOOTNOTE_MARK.sub("", text)) and not _FOOTNOTE.match(text):
+            rows.append(text)
+    return rows
+
+
+def type_from_unit(text: str) -> str:
+    """A requirement type guessed from the unit of a limit row.
+
+    The last unit in the row decides: it belongs to the values, while earlier ones
+    usually belong to a condition ("Supply voltage, TA = -55 °C to 150 °C ... 5.5 V").
+    """
+    last = max(
+        (
+            (match.start(), kind)
+            for pattern, kind in _UNIT_TYPES
+            for match in pattern.finditer(text)
+        ),
+        default=None,
+    )
+    return last[1] if last else "other"
+
+
+def is_limit(text: str, section: str) -> bool:
+    """A limit states numbers inside a ratings or operating-conditions section, or
+    next to explicit boundary words such as "maximum" or "at least".
+
+    Footnote markers like "(1)" are not values, footnotes themselves and table
+    conditions ("over free-air temperature range, unless otherwise noted") are not limits.
+    """
+    if _FOOTNOTE.match(text) or _TABLE_CONDITION.search(text) or _TIMING_SECTION.search(section):
+        return False
+    body = _FOOTNOTE_MARK.sub("", text)
+    if not _NUMBER.search(body):
+        return False
+    return bool(_LIMIT_SECTION.search(section) or _LIMIT_WORDS.search(body))
+
+
+def classify(quote: str, section: str) -> Kind | None:
+    """The kind of a verified quote, or None when it is a description.
+
+    Obligation wording wins: "The supply voltage must not drop below 1.8 V" is an
+    obligation even though it also names a boundary. Rows with values in a ratings
+    section are limits before any imperative reading is tried.
+    """
+    if _TEST_INPUT.match(quote) or looks_like_code(quote) or _LEAD_IN.search(quote):
+        return None
+    if has_obligation_wording(quote):
+        return Kind.OBLIGATION
+    # In a ratings or operating-conditions section, a row with values is a limit even if
+    # its first word could be read as a verb ("Supply voltage ...", "Power dissipation ...").
+    if _LIMIT_SECTION.search(section) and is_limit(quote, section):
+        return Kind.LIMIT
+    if is_imperative(quote):
+        return Kind.OBLIGATION
+    if is_limit(quote, section):
+        return Kind.LIMIT
+    return None
+
+
+def invents_obligation(paraphrase: str, quote: str) -> bool:
+    """True when the paraphrase says must/shall/required and the quote does not.
+
+    An imperative quote is an instruction, so "The designer must place ..." for
+    "Place ..." is not an invention.
+    """
+    return bool(
+        _STRONG_WORDS.search(paraphrase)
+        and not _STRONG_WORDS.search(quote)
+        and not is_imperative(quote)
+    )
