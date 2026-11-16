@@ -1,0 +1,41 @@
+# docker compose up --build
+# UI: http://localhost:8080   API docs: http://localhost:8000/docs
+# Ollama runs on the host (not in Docker); pull the model first: ollama pull qwen3:4b
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.20.0
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - qdrant
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen3:4b}
+      CORS_ORIGINS: '["http://localhost:${FRONTEND_PORT:-8080}"]'
+    extra_hosts:
+      # Makes host.docker.internal resolve on Linux too (Docker Desktop provides it already).
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - reqtrace_data:/data
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      # Host port of the UI; change it if 8080 is taken on your machine (FRONTEND_PORT=8081).
+      - "${FRONTEND_PORT:-8080}:80"
+
+volumes:
+  qdrant_data:
+  reqtrace_data:
