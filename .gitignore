@@ -1,0 +1,36 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Runtime data: uploads, SQLite, Qdrant storage, model caches
+/data/
+qdrant_storage/
+*.db
+*.sqlite3
+eval/.work/
+
+# Frontend
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local sample documents (e.g. third-party datasheets) are never committed
+samples/*.pdf

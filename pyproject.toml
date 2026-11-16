@@ -1,0 +1,60 @@
+[project]
+name = "reqtrace"
+version = "0.1.0"
+description = "Self-hosted assistant that answers questions from technical documents with page citations and extracts verified requirements."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi==0.162.5",
+    "uvicorn[standard]==0.54.0",
+    "pydantic==2.14.3",
+    "pydantic-settings==2.16.3",
+    "sqlalchemy==2.1.8",
+    "qdrant-client==1.20.0",
+    "fastembed==0.9.1",
+    "docling==2.150.0",
+    "pypdfium2==5.15.2",
+    "httpx==0.28.1",
+    "rapidfuzz==3.14.6",
+    "openpyxl==3.1.5",
+    "python-multipart==0.0.33",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.2.0",
+    "ruff==0.17.5",
+    "fpdf2==2.9.0",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["frontend"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "N", "ANN"]
+ignore = ["ANN401", "SIM905"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "E501"]
+# These files map typographic characters on purpose.
+"app/verification.py" = ["RUF001"]
+"app/extraction_scope.py" = ["RUF001"]
+"tests/test_verification.py" = ["RUF001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore:Payload indexes have no effect in the local Qdrant:UserWarning",
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
