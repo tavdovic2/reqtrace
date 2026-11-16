@@ -1,0 +1,2060 @@
+[
+  {
+    "id": "q01",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      1,
+      3,
+      2,
+      1,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The absolute maximum supply voltage is 36 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q02",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      7,
+      3,
+      2,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The 4 to 20 mA output variant requires a supply voltage range of 9 to 32 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q03",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      7,
+      2,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The 0 to 10 V output variant needs a supply voltage of 15 to 32 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q04",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      3,
+      8,
+      2,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The typical current consumption of the Modbus variant is 12 mA",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q05",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      2,
+      7,
+      1,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The burst pressure of the transmitter is 5 times the full scale pressure.",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q06",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      6,
+      1,
+      6
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The highest overpressure the device tolerates is 600 bar",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q07",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      4,
+      6,
+      6,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Storage temperature range is -40 to +100 °C",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q08",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      1,
+      1,
+      2,
+      2,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The NX-310 has an accuracy of ±0.1 % of full scale at 25 °C",
+    "cited_pages": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "q09",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      2,
+      4,
+      5,
+      1
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The response time of the transmitter is less than 2 ms",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q10",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      4,
+      7,
+      2,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The transmitter reaches its specified accuracy within 500 ms after power-up",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q11",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      2,
+      1,
+      3,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "21.5 mA",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q12",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      8,
+      4,
+      6,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Thermal error in the compensated temperature range is ±0.015 % FS/K",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q13",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      2,
+      8,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The default baud rate of the Modbus RTU interface is 19200 baud",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q14",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      2,
+      3,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The factory default Modbus slave address is 247",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q15",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      5,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The device must respond to a valid Modbus request within 10 ms",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q16",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      2,
+      5,
+      8,
+      1
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Register 30001 contains the measured pressure",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q17",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      8,
+      7
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The RS-485 bus termination resistor is not built into the device and must be fitted externally.",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q18",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      6,
+      7,
+      7,
+      8,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The version with the M12 connector has an ingress protection rating of IP67",
+    "cited_pages": [
+      6
+    ]
+  },
+  {
+    "id": "q19",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      1,
+      2,
+      4,
+      7,
+      1
+    ],
+    "hit": false,
+    "answered": true,
+    "correct": false,
+    "answer": "The transmitter weighs approximately 120 grams",
+    "cited_pages": [
+      6
+    ]
+  },
+  {
+    "id": "q20",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      1,
+      6,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The X variant is approved as ATEX II 1G Ex ia IIC T4 Ga",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q21",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      6,
+      3,
+      3,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The maximum input voltage Ui for intrinsically safe variants is 28 V",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q22",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      2,
+      5,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The G1/4 process connection should be tightened with a torque of 25 Nm",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q23",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      8,
+      4,
+      4,
+      8,
+      7
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The recommended recalibration interval is 24 months.",
+    "cited_pages": [
+      8
+    ]
+  },
+  {
+    "id": "q24",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      2,
+      5,
+      2,
+      3,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "M stands for Modbus RTU over RS-485, 4-wire",
+    "cited_pages": [
+      2
+    ]
+  },
+  {
+    "id": "q25",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      2,
+      3,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Zadani Modbus baud rate uređaja je 19200 baud",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "u01",
+    "mode": "dense",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      2,
+      1,
+      2,
+      8
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u02",
+    "mode": "dense",
+    "answerable": false,
+    "retrieved_pages": [
+      2,
+      1,
+      2,
+      1,
+      3
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u03",
+    "mode": "dense",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      2,
+      1,
+      2,
+      5
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u04",
+    "mode": "dense",
+    "answerable": false,
+    "retrieved_pages": [
+      5,
+      3,
+      2,
+      3,
+      2
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u05",
+    "mode": "dense",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      1,
+      2,
+      2,
+      8
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u06",
+    "mode": "dense",
+    "answerable": false,
+    "retrieved_pages": [
+      6,
+      6,
+      5,
+      3,
+      3
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "q26",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      7,
+      5,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "A 0.1-µF ceramic capacitor is recommended between the supply input and ground",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q27",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      2,
+      7
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Up to four transmitters can share one RS-485 segment without a repeater",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q28",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      5,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "4 transmitera",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q29",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      6,
+      7,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "0.1-µF ceramic capacitor",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q30",
+    "mode": "dense",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      2,
+      5,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "25 Nm",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "u07",
+    "mode": "dense",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      2,
+      1,
+      2,
+      3
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "q01",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      1,
+      2,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The absolute maximum supply voltage of the NX-310 is 36 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q02",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      2,
+      5,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The 4 to 20 mA output variant requires a supply voltage range of 9 to 32 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q03",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      2,
+      1,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "15 to 32 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q04",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      5,
+      8,
+      1,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The typical current consumption of the Modbus variant is 12 mA",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q05",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      1,
+      7,
+      1,
+      6
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The burst pressure of the transmitter is 5 times the full scale pressure.",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q06",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      7,
+      3,
+      6,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The highest overpressure the device tolerates is 600 bar",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q07",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      4,
+      5,
+      6,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The storage temperature range is -40 to +100 °C",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q08",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      1,
+      2,
+      2,
+      1
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The NX-310 has an accuracy of ±0.1 % of full scale.",
+    "cited_pages": [
+      1
+    ]
+  },
+  {
+    "id": "q09",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      2,
+      1,
+      7,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The response time of the transmitter is less than 2 ms",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q10",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      4,
+      1,
+      1,
+      7
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The transmitter reaches its specified accuracy within 500 ms after power-up",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q11",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      1,
+      8,
+      3,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "21.5 mA",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q12",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      8,
+      3,
+      5,
+      6
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Thermal error in the compensated temperature range is ±0.015 % FS/K",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q13",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      8,
+      3,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The default baud rate of the Modbus RTU interface is 19200 baud",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q14",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      8,
+      3,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The factory default Modbus slave address is 247",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q15",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      4,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The device must respond to a valid Modbus request within 10 ms",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q16",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      8,
+      1,
+      5,
+      2,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The measured pressure is stored in Modbus register 30001",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q17",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      1,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The RS-485 bus termination resistor is not built into the device; it must be fitted externally.",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q18",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      6,
+      3,
+      6,
+      8,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "IP67",
+    "cited_pages": [
+      6
+    ]
+  },
+  {
+    "id": "q19",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      1,
+      2,
+      7,
+      4,
+      1
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "q20",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      3,
+      1,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The X variant is approved as ATEX II 1G Ex ia IIC T4 Ga",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q21",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      3,
+      2,
+      3,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The maximum input voltage Ui for intrinsically safe variants is 28 V",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q22",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      2,
+      8,
+      1
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The G1/4 process connection should be tightened with a torque of 25 Nm",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q23",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      8,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The recommended recalibration interval is 24 months.",
+    "cited_pages": [
+      8
+    ]
+  },
+  {
+    "id": "q24",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      2,
+      2,
+      8,
+      5,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Modbus RTU over RS-485, 4-wire",
+    "cited_pages": [
+      2
+    ]
+  },
+  {
+    "id": "q25",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      3,
+      3,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Zadani Modbus baud rate uređaja je 19200 baud",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "u01",
+    "mode": "bm25",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      2,
+      2,
+      1,
+      4
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u02",
+    "mode": "bm25",
+    "answerable": false,
+    "retrieved_pages": [
+      2,
+      2,
+      1,
+      6,
+      1
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u03",
+    "mode": "bm25",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      2,
+      2,
+      1
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u04",
+    "mode": "bm25",
+    "answerable": false,
+    "retrieved_pages": [
+      5,
+      8,
+      6,
+      3,
+      8
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u05",
+    "mode": "bm25",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      2,
+      2,
+      1
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u06",
+    "mode": "bm25",
+    "answerable": false,
+    "retrieved_pages": [
+      3,
+      1,
+      4,
+      7,
+      3
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "q26",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "A 0.1-µF ceramic capacitor is recommended between the supply input and ground",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q27",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      1,
+      8,
+      2,
+      1
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Up to four transmitters can share one RS-485 segment without a repeater",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q28",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      1,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "4 transmitera može dijeliti jedan RS-485 segment bez repetitora",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q29",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      8,
+      1,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "0.1-µF ceramic capacitor",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q30",
+    "mode": "bm25",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      2,
+      3,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "25 Nm",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "u07",
+    "mode": "bm25",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      2,
+      2,
+      1
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "q01",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      1,
+      3,
+      2,
+      1
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The absolute maximum supply voltage is 36 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q02",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      2,
+      7,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "9 to 32 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q03",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      7,
+      2,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The 0 to 10 V output variant requires a supply voltage of 15 to 32 V DC",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q04",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      3,
+      8,
+      7,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The typical current consumption of the Modbus variant is 12 mA",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q05",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      7,
+      1,
+      2,
+      1
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The burst pressure of the transmitter is 5 times the full scale pressure",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q06",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      7,
+      6,
+      1
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The highest overpressure the device tolerates is 600 bar",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q07",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      4,
+      6,
+      5,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The storage temperature range is -40 to +100 °C",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q08",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      1,
+      1,
+      2,
+      2,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The NX-310 has an accuracy of ±0.1 % of full scale at 25 °C",
+    "cited_pages": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "q09",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      2,
+      4,
+      1,
+      7
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The response time of the transmitter is less than 2 ms",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q10",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      4,
+      1,
+      7,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The transmitter reaches its specified accuracy within 500 ms after power-up",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q11",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      1,
+      2,
+      3,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "21.5 mA",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q12",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      4,
+      8,
+      5,
+      6,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Thermal error in the compensated temperature range is ±0.015 % FS/K",
+    "cited_pages": [
+      4
+    ]
+  },
+  {
+    "id": "q13",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      8,
+      2,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The default baud rate of the Modbus RTU interface is 19200 baud",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q14",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      8,
+      2,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The factory default Modbus slave address is 247",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q15",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      8,
+      2,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The device must respond to a valid Modbus request within 10 ms",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q16",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      1,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Register 30001 contains the measured pressure",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q17",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      1,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The RS-485 bus termination resistor is not built into the device; it must be fitted externally.",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q18",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      6,
+      3,
+      6,
+      7,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "IP67",
+    "cited_pages": [
+      6
+    ]
+  },
+  {
+    "id": "q19",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      1,
+      2,
+      1,
+      7,
+      4
+    ],
+    "hit": false,
+    "answered": true,
+    "correct": false,
+    "answer": "The transmitter weighs approximately 120 grams",
+    "cited_pages": [
+      6
+    ]
+  },
+  {
+    "id": "q20",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      1,
+      3,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The X variant is approved as ATEX II 1G Ex ia IIC T4 Ga",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q21",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      3,
+      2,
+      3,
+      6
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The maximum input voltage Ui for intrinsically safe variants is 28 V",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q22",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      2,
+      8,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The G1/4 process connection should be tightened with a torque of 25 Nm",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "q23",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      8,
+      3,
+      4,
+      4,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "The recommended recalibration interval is 24 months.",
+    "cited_pages": [
+      8
+    ]
+  },
+  {
+    "id": "q24",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      2,
+      2,
+      3,
+      5,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Modbus RTU over RS-485, 4-wire",
+    "cited_pages": [
+      2
+    ]
+  },
+  {
+    "id": "q25",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      5,
+      2,
+      3,
+      3
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Zadani Modbus baud rate uređaja je 19200 baud",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "u01",
+    "mode": "hybrid",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      1,
+      2,
+      2,
+      4
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u02",
+    "mode": "hybrid",
+    "answerable": false,
+    "retrieved_pages": [
+      2,
+      2,
+      1,
+      1,
+      6
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u03",
+    "mode": "hybrid",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      1,
+      2,
+      2,
+      5
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u04",
+    "mode": "hybrid",
+    "answerable": false,
+    "retrieved_pages": [
+      5,
+      3,
+      8,
+      3,
+      2
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u05",
+    "mode": "hybrid",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      1,
+      2,
+      2,
+      8
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "u06",
+    "mode": "hybrid",
+    "answerable": false,
+    "retrieved_pages": [
+      3,
+      6,
+      4,
+      5,
+      3
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  },
+  {
+    "id": "q26",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      8,
+      7,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "A 0.1-µF ceramic capacitor is recommended between the supply input and ground",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q27",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      1,
+      2,
+      2
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "Up to four transmitters can share one RS-485 segment without a repeater",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q28",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      5,
+      8,
+      2,
+      1,
+      5
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "4 transmitera",
+    "cited_pages": [
+      5
+    ]
+  },
+  {
+    "id": "q29",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      3,
+      3,
+      7,
+      6,
+      4
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "0.1-µF ceramic capacitor",
+    "cited_pages": [
+      3
+    ]
+  },
+  {
+    "id": "q30",
+    "mode": "hybrid",
+    "answerable": true,
+    "retrieved_pages": [
+      7,
+      2,
+      2,
+      5,
+      8
+    ],
+    "hit": true,
+    "answered": true,
+    "correct": true,
+    "answer": "25 Nm",
+    "cited_pages": [
+      7
+    ]
+  },
+  {
+    "id": "u07",
+    "mode": "hybrid",
+    "answerable": false,
+    "retrieved_pages": [
+      1,
+      1,
+      2,
+      2,
+      3
+    ],
+    "hit": false,
+    "answered": false,
+    "correct": false,
+    "answer": "I could not find the answer in the selected documents.",
+    "cited_pages": []
+  }
+]

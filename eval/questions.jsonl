@@ -1,0 +1,37 @@
+{"id": "q01", "question": "What is the absolute maximum supply voltage of the NX-310?", "answerable": true, "expected_keywords": ["36"], "expected_pages": [3]}
+{"id": "q02", "question": "Which supply voltage range does the 4 to 20 mA output variant require?", "answerable": true, "expected_keywords": ["9", "32"], "expected_pages": [3]}
+{"id": "q03", "question": "What supply voltage does the 0 to 10 V output variant need?", "answerable": true, "expected_keywords": ["15", "32"], "expected_pages": [3]}
+{"id": "q04", "question": "What is the typical current consumption of the Modbus variant?", "answerable": true, "expected_keywords": ["12 mA"], "expected_pages": [3]}
+{"id": "q05", "question": "What is the burst pressure of the transmitter?", "answerable": true, "expected_keywords": ["5"], "expected_pages": [3]}
+{"id": "q06", "question": "What is the highest overpressure the device tolerates, in bar?", "answerable": true, "expected_keywords": ["600"], "expected_pages": [3]}
+{"id": "q07", "question": "What is the storage temperature range?", "answerable": true, "expected_keywords": ["40", "100"], "expected_pages": [3]}
+{"id": "q08", "question": "How accurate is the NX-310?", "answerable": true, "expected_keywords": ["0.1"], "expected_pages": [4, 1]}
+{"id": "q09", "question": "What is the response time of the transmitter?", "answerable": true, "expected_keywords": ["2 ms"], "expected_pages": [4]}
+{"id": "q10", "question": "How long after power-up does the transmitter reach its specified accuracy?", "answerable": true, "expected_keywords": ["500 ms"], "expected_pages": [4]}
+{"id": "q11", "question": "Which output current signals a failure of the sensing element?", "answerable": true, "expected_keywords": ["21.5"], "expected_pages": [4]}
+{"id": "q12", "question": "What is the thermal error in the compensated temperature range?", "answerable": true, "expected_keywords": ["0.015"], "expected_pages": [4]}
+{"id": "q13", "question": "What is the default baud rate of the Modbus RTU interface?", "answerable": true, "expected_keywords": ["19200"], "expected_pages": [5]}
+{"id": "q14", "question": "What is the factory default Modbus slave address?", "answerable": true, "expected_keywords": ["247"], "expected_pages": [5]}
+{"id": "q15", "question": "Within what time must the device answer a valid Modbus request?", "answerable": true, "expected_keywords": ["10 ms"], "expected_pages": [5]}
+{"id": "q16", "question": "Which Modbus register contains the measured pressure?", "answerable": true, "expected_keywords": ["30001"], "expected_pages": [5]}
+{"id": "q17", "question": "Is the RS-485 bus termination resistor built into the device?", "answerable": true, "expected_keywords": ["no|not|external|externally"], "expected_pages": [5]}
+{"id": "q18", "question": "What ingress protection rating does the version with the M12 connector have?", "answerable": true, "expected_keywords": ["IP67"], "expected_pages": [6]}
+{"id": "q19", "question": "How much does the transmitter weigh?", "answerable": true, "expected_keywords": ["120 g"], "expected_pages": [6]}
+{"id": "q20", "question": "What is the ATEX marking of the intrinsically safe X variant?", "answerable": true, "expected_keywords": ["ia", "T4"], "expected_pages": [7]}
+{"id": "q21", "question": "What is the maximum input voltage Ui of the barrier for intrinsically safe variants?", "answerable": true, "expected_keywords": ["28"], "expected_pages": [7]}
+{"id": "q22", "question": "With what torque should the G1/4 process connection be tightened?", "answerable": true, "expected_keywords": ["25 Nm"], "expected_pages": [7]}
+{"id": "q23", "question": "What is the recommended recalibration interval?", "answerable": true, "expected_keywords": ["24 months"], "expected_pages": [8]}
+{"id": "q24", "question": "What does the output code M in the part number stand for?", "answerable": true, "expected_keywords": ["Modbus"], "expected_pages": [2]}
+{"id": "q25", "question": "Koliki je zadani Modbus baud rate uređaja?", "answerable": true, "expected_keywords": ["19200"], "expected_pages": [5]}
+{"id": "u01", "question": "What is the warranty period of the NX-310?", "answerable": false, "expected_keywords": [], "expected_pages": []}
+{"id": "u02", "question": "How much does an NX-310-A-100-G cost?", "answerable": false, "expected_keywords": [], "expected_pages": []}
+{"id": "u03", "question": "What is the MTBF of the NX-310?", "answerable": false, "expected_keywords": [], "expected_pages": []}
+{"id": "u04", "question": "What is the maximum cable length for the 4 to 20 mA loop?", "answerable": false, "expected_keywords": [], "expected_pages": []}
+{"id": "u05", "question": "In which country is the NX-310 manufactured?", "answerable": false, "expected_keywords": [], "expected_pages": []}
+{"id": "u06", "question": "What is the power consumption of the device in sleep mode?", "answerable": false, "expected_keywords": [], "expected_pages": []}
+{"id": "q26", "question": "Which capacitor is recommended between the supply input and ground?", "answerable": true, "expected_keywords": ["0.1"], "expected_pages": [3]}
+{"id": "q27", "question": "How many transmitters can share one RS-485 segment without a repeater?", "answerable": true, "expected_keywords": ["four|4"], "expected_pages": [5]}
+{"id": "q28", "question": "Koliko transmitera može dijeliti jedan RS-485 segment bez repetitora?", "answerable": true, "expected_keywords": ["četiri|4|four"], "expected_pages": [5]}
+{"id": "q29", "question": "Koji kondenzator se preporučuje između ulaza napajanja i mase?", "answerable": true, "expected_keywords": ["0.1"], "expected_pages": [3]}
+{"id": "q30", "question": "Kojim momentom treba pritegnuti G1/4 procesni priključak?", "answerable": true, "expected_keywords": ["25 Nm"], "expected_pages": [7]}
+{"id": "u07", "question": "Koliko košta NX-310?", "answerable": false, "expected_keywords": [], "expected_pages": []}
