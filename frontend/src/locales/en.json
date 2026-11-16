@@ -1,0 +1,172 @@
+{
+  "app": {
+    "tagline": "Answers from your documents, with the page to prove it.",
+    "skipToQuestion": "Skip to the question field"
+  },
+  "language": {
+    "label": "Language",
+    "en": "EN",
+    "bs": "BS",
+    "enName": "English",
+    "bsName": "Bosnian"
+  },
+  "health": {
+    "apiDown": "The reqTrace API is not reachable. Is the backend running?",
+    "qdrantDown": "The vector database (Qdrant) is not reachable.",
+    "ollamaDown": "Ollama is not reachable. Questions and requirement extraction will fail until it runs.",
+    "modelMissing": "The model {{model}} is not installed in Ollama. Run: ollama pull {{model}}",
+    "ready": "Ready · {{model}}"
+  },
+  "cabinet": {
+    "title": "Filing cabinet",
+    "search": "Search drawers and documents",
+    "loading": "Opening the cabinet…",
+    "loadError": "Could not load the drawers: {{message}}",
+    "retry": "Try again",
+    "empty": "No drawers yet. Create the first one below.",
+    "noMatches": "Nothing matches “{{query}}”."
+  },
+  "drawer": {
+    "documents_one": "{{count}} document",
+    "documents_other": "{{count}} documents",
+    "open": "Open drawer {{name}}",
+    "close": "Close drawer {{name}}",
+    "rename": "Rename",
+    "delete": "Delete drawer",
+    "confirmDelete": "Delete the drawer “{{name}}” with all its documents? This cannot be undone.",
+    "nameLabel": "Drawer name",
+    "save": "Save",
+    "cancel": "Cancel",
+    "empty": "This drawer is empty. Add a PDF below."
+  },
+  "temporary": {
+    "title": "Temporary tray",
+    "note": "Empties 24 hours after upload"
+  },
+  "document": {
+    "reading": "Reading… {{done}} / {{total}} pages",
+    "indexing": "Indexing…",
+    "failed": "Failed",
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages",
+    "delete": "Delete {{name}}",
+    "confirmDelete": "Delete “{{name}}”? Its requirements and search index are deleted too.",
+    "expires": "Expires {{time}}"
+  },
+  "upload": {
+    "drop": "Drop a PDF here",
+    "or": "or",
+    "choose": "choose a file",
+    "uploading": "Uploading {{name}}…",
+    "notPdf": "Only PDF files can be uploaded.",
+    "failed": "Upload failed: {{message}}"
+  },
+  "newDrawer": {
+    "button": "+ New drawer",
+    "temporary": "Temporary (empties after 24 hours)",
+    "create": "Create",
+    "failed": "Could not create the drawer: {{message}}"
+  },
+  "notepad": {
+    "tabs": "Notepad",
+    "conversation": "Conversation",
+    "requirements": "Requirements"
+  },
+  "chat": {
+    "scope": "Search in",
+    "thisDrawer": "This drawer",
+    "wholeCabinet": "Whole cabinet",
+    "openDrawerHint": "Open a drawer to search only its documents.",
+    "searchingIn": "Searching in: {{name}}",
+    "label": "Question",
+    "placeholder": "Ask about your documents…",
+    "send": "Ask",
+    "thinking": "Looking through the documents…",
+    "empty": "Ask a question. Every answer cites the file and page it comes from, and says so when the documents do not contain the answer.",
+    "notFound": "Not in the documents",
+    "sources": "Sources",
+    "sourceTag": "{{filename}}, p. {{page}}",
+    "openSource": "Show {{filename}}, page {{page}}",
+    "error": "The question could not be answered: {{message}}",
+    "question": "Q",
+    "answer": "A"
+  },
+  "requirements": {
+    "document": "Document",
+    "choose": "Choose a document…",
+    "noDocuments": "No ready documents yet. Upload a PDF to a drawer first.",
+    "extract": "Extract requirements",
+    "rerun": "Extract again",
+    "starting": "Starting extraction…",
+    "running": "Extracting… {{done}} of {{total}} excerpts",
+    "failed": "Extraction failed: {{message}}",
+    "notRun": "No requirements extracted for this document yet.",
+    "none": "No verifiable requirements were found.",
+    "count_one": "{{count}} verified requirement",
+    "count_other": "{{count}} verified requirements",
+    "download": "Download",
+    "csv": "CSV",
+    "excel": "Excel",
+    "columns": {
+      "id": "ID",
+      "quote": "Quote (verbatim)",
+      "page": "Page",
+      "paraphrase": "Paraphrase",
+      "status": "Status",
+      "kind": "Kind / type"
+    },
+    "verified": "Verified",
+    "pageChip": "p. {{page}}",
+    "openPage": "Show page {{page}}",
+    "types": {
+      "functional": "Functional",
+      "performance": "Performance",
+      "electrical": "Electrical",
+      "safety": "Safety",
+      "interface": "Interface",
+      "environmental": "Environmental",
+      "other": "Other",
+      "process": "Process"
+    },
+    "rejectedQuote_one": "{{count}} rejected: quote not on the page",
+    "rejectedQuote_other": "{{count}} rejected: quote not on the page",
+    "paraphraseNote": "Paraphrases are written by the language model; the quote is the source text.",
+    "rejectedNotRequirement_one": "{{count}} not an obligation or limit",
+    "rejectedNotRequirement_other": "{{count}} not obligations or limits",
+    "skipped_one": "{{count}} section skipped",
+    "skipped_other": "{{count}} sections skipped",
+    "took": "took {{time}}",
+    "elapsed": "Elapsed {{time}}",
+    "remaining": "about {{time}} left",
+    "paraphraseRemoved": "No paraphrase: the model's wording did not match the quote",
+    "kinds": {
+      "obligation": "Obligation",
+      "limit": "Limit"
+    }
+  },
+  "viewer": {
+    "title": "Cited page",
+    "previous": "Previous page",
+    "next": "Next page",
+    "pageOf": "Page {{page}} of {{total}}",
+    "loading": "Loading page…",
+    "error": "The PDF could not be displayed.",
+    "close": "Close page view",
+    "openFile": "Open the PDF in a new tab"
+  },
+  "errors": {
+    "network": "Cannot reach the server."
+  },
+  "why": {
+    "toggle": "Why?",
+    "modelAnswered": "The model proposed an answer, but no statement in it was supported by a cited passage.",
+    "modelRefused": "The model found no answer in the retrieved passages.",
+    "discarded": "Discarded statements",
+    "numberMissing": "The number {{numbers}} is not in the cited passages.",
+    "noCitation": "It cites none of the retrieved passages.",
+    "queries": "Searched for",
+    "retrieved_one": "{{count}} retrieved passage",
+    "retrieved_other": "{{count}} retrieved passages",
+    "chunkMeta": "{{filename}}, page {{page}} · score {{score}}"
+  }
+}

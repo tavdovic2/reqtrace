@@ -1,0 +1,179 @@
+{
+  "app": {
+    "tagline": "Odgovori iz vaših dokumenata, sa stranicom kao dokazom.",
+    "skipToQuestion": "Preskoči na polje za pitanje"
+  },
+  "language": {
+    "label": "Jezik",
+    "en": "EN",
+    "bs": "BS",
+    "enName": "engleski",
+    "bsName": "bosanski"
+  },
+  "health": {
+    "apiDown": "reqTrace API nije dostupan. Da li je backend pokrenut?",
+    "qdrantDown": "Vektorska baza (Qdrant) nije dostupna.",
+    "ollamaDown": "Ollama nije dostupna. Pitanja i izdvajanje zahtjeva neće raditi dok se ne pokrene.",
+    "modelMissing": "Model {{model}} nije instaliran u Ollami. Pokrenite: ollama pull {{model}}",
+    "ready": "Spremno · {{model}}"
+  },
+  "cabinet": {
+    "title": "Ormar s ladicama",
+    "search": "Pretraži ladice i dokumente",
+    "loading": "Otvaram ormar…",
+    "loadError": "Ladice se ne mogu učitati: {{message}}",
+    "retry": "Pokušaj ponovo",
+    "empty": "Još nema ladica. Napravite prvu ispod.",
+    "noMatches": "Ništa ne odgovara pojmu „{{query}}”."
+  },
+  "drawer": {
+    "documents_one": "{{count}} dokument",
+    "documents_few": "{{count}} dokumenta",
+    "documents_other": "{{count}} dokumenata",
+    "open": "Otvori ladicu {{name}}",
+    "close": "Zatvori ladicu {{name}}",
+    "rename": "Preimenuj",
+    "delete": "Obriši ladicu",
+    "confirmDelete": "Obrisati ladicu „{{name}}” sa svim dokumentima? Ovo se ne može poništiti.",
+    "nameLabel": "Naziv ladice",
+    "save": "Sačuvaj",
+    "cancel": "Odustani",
+    "empty": "Ladica je prazna. Dodajte PDF ispod."
+  },
+  "temporary": {
+    "title": "Privremena ladica",
+    "note": "Prazni se 24 sata nakon otpremanja"
+  },
+  "document": {
+    "reading": "Čitam… {{done}} / {{total}} stranica",
+    "indexing": "Indeksiram…",
+    "failed": "Neuspjelo",
+    "pages_one": "{{count}} stranica",
+    "pages_few": "{{count}} stranice",
+    "pages_other": "{{count}} stranica",
+    "delete": "Obriši {{name}}",
+    "confirmDelete": "Obrisati „{{name}}”? Brišu se i njegovi zahtjevi i indeks za pretragu.",
+    "expires": "Ističe {{time}}"
+  },
+  "upload": {
+    "drop": "Spustite PDF ovdje",
+    "or": "ili",
+    "choose": "odaberite fajl",
+    "uploading": "Otpremam {{name}}…",
+    "notPdf": "Mogu se otpremati samo PDF fajlovi.",
+    "failed": "Otpremanje nije uspjelo: {{message}}"
+  },
+  "newDrawer": {
+    "button": "+ Nova ladica",
+    "temporary": "Privremena (prazni se nakon 24 sata)",
+    "create": "Napravi",
+    "failed": "Ladica se ne može napraviti: {{message}}"
+  },
+  "notepad": {
+    "tabs": "Blok",
+    "conversation": "Razgovor",
+    "requirements": "Zahtjevi"
+  },
+  "chat": {
+    "scope": "Traži u",
+    "thisDrawer": "Ova ladica",
+    "wholeCabinet": "Cijeli ormar",
+    "openDrawerHint": "Otvorite ladicu da biste pretraživali samo njene dokumente.",
+    "searchingIn": "Pretražujem: {{name}}",
+    "label": "Pitanje",
+    "placeholder": "Pitajte nešto o dokumentima…",
+    "send": "Pitaj",
+    "thinking": "Pregledam dokumente…",
+    "empty": "Postavite pitanje. Svaki odgovor navodi fajl i stranicu iz koje dolazi, a kaže i kada dokumenti ne sadrže odgovor.",
+    "notFound": "Nema u dokumentima",
+    "sources": "Izvori",
+    "sourceTag": "{{filename}}, str. {{page}}",
+    "openSource": "Prikaži {{filename}}, stranica {{page}}",
+    "error": "Na pitanje se ne može odgovoriti: {{message}}",
+    "question": "P",
+    "answer": "O"
+  },
+  "requirements": {
+    "document": "Dokument",
+    "choose": "Odaberite dokument…",
+    "noDocuments": "Još nema spremnih dokumenata. Prvo otpremite PDF u neku ladicu.",
+    "extract": "Izdvoji zahtjeve",
+    "rerun": "Izdvoji ponovo",
+    "starting": "Pokrećem izdvajanje…",
+    "running": "Izdvajam… {{done}} od {{total}} isječaka",
+    "failed": "Izdvajanje nije uspjelo: {{message}}",
+    "notRun": "Za ovaj dokument još nisu izdvojeni zahtjevi.",
+    "none": "Nije pronađen nijedan provjerljiv zahtjev.",
+    "count_one": "{{count}} provjeren zahtjev",
+    "count_few": "{{count}} provjerena zahtjeva",
+    "count_other": "{{count}} provjerenih zahtjeva",
+    "download": "Preuzmi",
+    "csv": "CSV",
+    "excel": "Excel",
+    "columns": {
+      "id": "ID",
+      "quote": "Citat (doslovno)",
+      "page": "Str.",
+      "paraphrase": "Parafraza",
+      "status": "Status",
+      "kind": "Vrsta / tip"
+    },
+    "verified": "Provjereno",
+    "pageChip": "str. {{page}}",
+    "openPage": "Prikaži stranicu {{page}}",
+    "types": {
+      "functional": "Funkcionalni",
+      "performance": "Performanse",
+      "electrical": "Električni",
+      "safety": "Sigurnost",
+      "interface": "Interfejs",
+      "environmental": "Okolina",
+      "other": "Ostalo",
+      "process": "Proces"
+    },
+    "rejectedQuote_one": "{{count}} odbijen: citat nije na stranici",
+    "rejectedQuote_few": "{{count}} odbijena: citat nije na stranici",
+    "rejectedQuote_other": "{{count}} odbijeno: citat nije na stranici",
+    "paraphraseNote": "Parafraze piše jezički model; citat je izvorni tekst.",
+    "rejectedNotRequirement_one": "{{count}} nije obaveza ni granica",
+    "rejectedNotRequirement_few": "{{count}} nisu obaveze ni granice",
+    "rejectedNotRequirement_other": "{{count}} nisu obaveze ni granice",
+    "skipped_one": "{{count}} sekcija preskočena",
+    "skipped_few": "{{count}} sekcije preskočene",
+    "skipped_other": "{{count}} sekcija preskočeno",
+    "took": "trajalo {{time}}",
+    "elapsed": "Proteklo {{time}}",
+    "remaining": "još oko {{time}}",
+    "paraphraseRemoved": "Bez parafraze: formulacija modela nije odgovarala citatu",
+    "kinds": {
+      "obligation": "Obaveza",
+      "limit": "Granica"
+    }
+  },
+  "viewer": {
+    "title": "Citirana stranica",
+    "previous": "Prethodna stranica",
+    "next": "Sljedeća stranica",
+    "pageOf": "Stranica {{page}} od {{total}}",
+    "loading": "Učitavam stranicu…",
+    "error": "PDF se ne može prikazati.",
+    "close": "Zatvori prikaz stranice",
+    "openFile": "Otvori PDF u novoj kartici"
+  },
+  "errors": {
+    "network": "Server nije dostupan."
+  },
+  "why": {
+    "toggle": "Zašto?",
+    "modelAnswered": "Model je predložio odgovor, ali nijednu tvrdnju u njemu ne podržava citirani odlomak.",
+    "modelRefused": "Model nije našao odgovor u pronađenim odlomcima.",
+    "discarded": "Odbačene tvrdnje",
+    "numberMissing": "Broj {{numbers}} se ne nalazi u citiranim odlomcima.",
+    "noCitation": "Ne citira nijedan od pronađenih odlomaka.",
+    "queries": "Pretraženo",
+    "retrieved_one": "{{count}} pronađen odlomak",
+    "retrieved_few": "{{count}} pronađena odlomka",
+    "retrieved_other": "{{count}} pronađenih odlomaka",
+    "chunkMeta": "{{filename}}, stranica {{page}} · ocjena {{score}}"
+  }
+}
