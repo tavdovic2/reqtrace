@@ -472,3 +472,26 @@ against current documentation and the installed packages.
   between components through `useSyncExternalStore`, so switching it applies to the next
   question without a reload; answers already shown keep their debug data hidden or shown
   with the switch.
+- **Noise filter at ingestion, on parser blocks.** Labels from package drawings ("SCALE
+  5.500"), bare dates, part codes and repeated headers were indexed and ranked first for
+  questions with no answer. The filter (`app/noise.py`) works on the parser's blocks
+  before chunking, so noise inside a page's text is removed too, and table chunks are
+  judged on their cells, not on the heading path prepended to them. Headings are never
+  dropped: the section path and the extraction skip rules are built from them.
+  - *Repeated furniture:* a text block of at most `INGEST_REPEATED_MAX_CHARS` (60) found
+    on at least `INGEST_REPEATED_MIN_PAGES` (3) pages. The exact text always counts; text
+    that differs only in numbers ("Page 3 of 50") counts only if it carries no content,
+    so "Commit the work of task 1." to "... task 5." on five pages is kept. The length
+    limit keeps a repeated measurement condition (84 characters on TMP117) in the index.
+  - *Almost no words:* fewer than `INGEST_MIN_WORDS` (1) words, where a word has two or
+    more letters and, in text of up to 60 characters, capitals-only tokens ("SCALE",
+    "REVISED", "MAX") do not count. A value with a unit or an instruction keeps a block
+    regardless. A threshold of 2 words was tried first on TMP117 and dropped one-word list
+    items ("- Thermostats", "- NIST traceability"), so it is 1. Length alone is not used
+    for the same reason.
+  - A value with a unit must be a number standing on its own: the first Docker run kept
+    the part code "DRV0006B" because "0006B" read as 6 bytes.
+  - On TMP117 (Windows Docling) the filter drops 29 repeated and 20 wordless blocks of
+    543; together with the duplicate-text rule, 187 chunks become 161. Nothing it drops
+    holds an obligation or a value with a unit.
+  - Documents ingested earlier keep their chunks; they must be uploaded again.

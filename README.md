@@ -13,7 +13,7 @@ Ollama sized for a 6 GB GPU.
 ## Features
 
 - **Answers with citations.** Hybrid search (dense + BM25, fused with RRF in Qdrant)
-  finds the 5 best chunks. The LLM copies evidence from every relevant chunk, decides
+  finds the 8 best distinct chunks, at most 2 from one page. The LLM copies evidence from every relevant chunk, decides
   whether it answers the question, and writes the answer as claims that each cite the
   chunks stating them. A claim without a valid citation, or with a number none of its
   chunks contains, is dropped, and the sources are exactly the cited chunks. The answer
@@ -41,6 +41,11 @@ Ollama sized for a 6 GB GPU.
   24 hours after upload.
 - **Exact pages.** Chunks follow the document structure (sections, and every table as its
   own chunk with its heading path) and never span pages, so citations are exact.
+- **No noise in the index.** Repeated page headers and footers, labels from package
+  drawings, bare dates, page numbers and part codes are dropped at ingestion, as is text
+  that repeats an earlier chunk of the same document. Short text with a value and a unit
+  ("VDD 1.8 V") or an instruction ("Ground the pad.") is kept. Documents uploaded before
+  this filter existed must be uploaded again for it to apply.
 - **Web UI in English and Bosnian.** A filing cabinet, a notepad (conversation and
   requirements) and a viewer that shows the cited PDF page. A "Developer mode" switch
   next to the language buttons (off by default, remembered in the browser) adds a "Why?"
@@ -159,6 +164,9 @@ All settings are environment variables (or a `.env` file; see `.env.example`).
 | `RETRIEVAL_MAX_PER_PAGE` | `2` | At most this many of those chunks from one page |
 | `RETRIEVAL_PREFETCH_LIMIT` | `20` | Candidates per search before fusion |
 | `CHUNK_MAX_CHARS` / `CHUNK_OVERLAP_CHARS` | `1500` / `200` | Chunk size and overlap |
+| `INGEST_MIN_WORDS` | `1` | A text or table block with fewer words (two or more letters; capitals-only tokens in short text do not count) is not indexed unless it holds a value with a unit or an instruction; `0` turns this off |
+| `INGEST_REPEATED_MIN_PAGES` | `3` | Short text found on at least this many pages is a page header or footer and is not indexed; `0` turns this off |
+| `INGEST_REPEATED_MAX_CHARS` | `60` | Longest text that can count as a header or footer |
 | `MAX_UPLOAD_MB` | `50` | Upload size limit |
 | `TEMPORARY_TTL_HOURS` | `24` | Lifetime of documents in temporary drawers |
 | `CLEANUP_INTERVAL_MINUTES` | `15` | How often expired documents are removed |
@@ -198,7 +206,7 @@ question set in each search mode (`--mode dense|bm25|hybrid|all`). It reports:
 - **Answer accuracy**: the answer is given and contains every expected keyword.
 - **Abstention accuracy**: questions the document cannot answer get "not found".
 
-Results of a real run (2026-11-16, fix round 3) on the synthetic test datasheet:
+Results of a real run (2026-11-18, fix round 4) on the synthetic test datasheet:
 
 | Mode | Retrieval hit rate @5 | Answer accuracy | Abstention accuracy |
 |---|---|---|---|
@@ -207,8 +215,8 @@ Results of a real run (2026-11-16, fix round 3) on the synthetic test datasheet:
 | hybrid | 97% | 97% | 100% |
 
 30 answerable and 7 unanswerable questions · LLM `qwen3:4b` ·
-dense embeddings `intfloat/multilingual-e5-large` · 587 s for all three modes on an
-RTX 3050 (6 GB). The set includes Bosnian questions about the English document and
+dense embeddings `intfloat/multilingual-e5-large` · 569 s for all three modes on an
+RTX 3050 (6 GB). The numbers did not change with the duplicate and noise fixes of round 4. The set includes Bosnian questions about the English document and
 values printed in other notations ("0.1-µF", "four"). The same set with the code
 before fix round 3 gave 93% / 90% / 93% answer accuracy and the same 100% abstention:
 the Bosnian questions about the transmitter count were refused. The hit rate is still

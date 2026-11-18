@@ -89,7 +89,7 @@
     "hit": true,
     "answered": true,
     "correct": true,
-    "answer": "The burst pressure of the transmitter is 5 times the full scale pressure.",
+    "answer": "The burst pressure of the transmitter is 5 times the full scale pressure",
     "cited_pages": [
       3
     ]
@@ -337,7 +337,7 @@
     "hit": true,
     "answered": true,
     "correct": true,
-    "answer": "The version with the M12 connector has an ingress protection rating of IP67",
+    "answer": "The version with the M12 connector has an ingress protection rating of IP67.",
     "cited_pages": [
       6
     ]
@@ -741,7 +741,7 @@
     "hit": true,
     "answered": true,
     "correct": true,
-    "answer": "15 to 32 V DC",
+    "answer": "The 0 to 10 V output variant requires a supply voltage of 15 to 32 V DC",
     "cited_pages": [
       3
     ]
@@ -792,8 +792,8 @@
       3,
       7,
       3,
-      6,
-      8
+      8,
+      6
     ],
     "hit": true,
     "answered": true,
@@ -1025,7 +1025,7 @@
     "hit": true,
     "answered": true,
     "correct": true,
-    "answer": "IP67",
+    "answer": "The version with the M12 connector has an ingress protection rating of IP67",
     "cited_pages": [
       6
     ]
@@ -1308,7 +1308,7 @@
     "hit": true,
     "answered": true,
     "correct": true,
-    "answer": "4 transmitera može dijeliti jedan RS-485 segment bez repetitora",
+    "answer": "4 transmitera",
     "cited_pages": [
       5
     ]
@@ -1450,8 +1450,8 @@
     "retrieved_pages": [
       3,
       7,
-      1,
       2,
+      1,
       1
     ],
     "hit": true,
@@ -1526,8 +1526,8 @@
     "answerable": true,
     "retrieved_pages": [
       4,
-      2,
       4,
+      2,
       1,
       7
     ],
@@ -1622,8 +1622,8 @@
     "retrieved_pages": [
       5,
       5,
-      8,
       2,
+      8,
       3
     ],
     "hit": true,
@@ -1716,10 +1716,10 @@
     "answerable": true,
     "retrieved_pages": [
       1,
-      2,
       1,
-      7,
-      4
+      2,
+      4,
+      7
     ],
     "hit": false,
     "answered": true,
@@ -1903,7 +1903,7 @@
       3,
       8,
       3,
-      2
+      6
     ],
     "hit": false,
     "answered": false,
@@ -1937,7 +1937,7 @@
       6,
       4,
       5,
-      3
+      1
     ],
     "hit": false,
     "answered": false,
@@ -1992,7 +1992,7 @@
       8,
       2,
       1,
-      5
+      3
     ],
     "hit": true,
     "answered": true,

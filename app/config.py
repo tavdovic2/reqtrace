@@ -41,6 +41,14 @@ class Settings(BaseSettings):
 
     chunk_max_chars: int = 1500
     chunk_overlap_chars: int = 200
+    # Noise filter at ingestion (see app/noise.py). A text or table block with fewer
+    # words than this is dropped unless it holds a value with a unit or an instruction;
+    # 0 turns the check off.
+    ingest_min_words: int = Field(default=1, ge=0)
+    # A short text block (at most ingest_repeated_max_chars) found on at least this many
+    # pages is page furniture (header, footer, document code); 0 turns the check off.
+    ingest_repeated_min_pages: int = Field(default=3, ge=0)
+    ingest_repeated_max_chars: int = Field(default=60, ge=1)
 
     max_upload_mb: int = 50
     temporary_ttl_hours: int = 24

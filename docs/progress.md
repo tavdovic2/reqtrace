@@ -593,3 +593,49 @@ on the old code with 8 slots holding 4 distinct chunks, the reported pattern), p
 `/ask` body; `devMode.test.ts` checks that it is off by default, remembered, safe when
 storage throws, and that `debug` is sent only when it is on. Frontend: i18n check (128
 keys), Prettier, 9 tests and the build pass.
+
+**Task 2: noise chunks.** Root cause: nothing filtered parser output. Docling returns
+drawing labels, dates, part codes and the vendor web address as body text blocks, and
+each short block on a page of its own section became a chunk (on TMP117: "SCALE
+5.500", "23-Oct-2026", "YBG0006-C01", "www.ti.com" on 8 pages). `app/noise.py` now drops
+repeated furniture and wordless blocks before chunking; tests in `tests/test_noise.py`
+cover both sides (header, URL, drawing label, date, part code and page number out; a
+short table row with a unit, a short imperative, a one-word list item and headings in),
+plus an ingestion test through the API. The first version dropped "Commit the work of
+task N." on five pages as a footer (caught by an existing extraction test), and the
+first Docker run kept "DRV0006B" as a value with a unit; both are fixed with tests.
+
+**Measurements (TMP117, models loaded, same machine)**
+
+| | Chunks | Parse | Embed | Upsert | Total |
+|---|---|---|---|---|---|
+| Docker, round 3 | 180 | 223 s | 226 s | 0.6 s | 450 s |
+| Docker, round 4 | 158 | 258 s | 186 s | 0.6 s | 445 s |
+| Development, round 3 (two runs) | 187 | 221 / 230 s | 238 / 205 s | 0.3 / 0.4 s | 460 / 436 s |
+| Development, round 4 | 161 | 244 s | 197 s | 0.6 s | 442 s |
+
+Embedding time falls with the chunk count (about 12-18%). Parsing is not affected by the
+filter (it runs after parsing); its variation between runs (221-258 s) is larger than
+the saving, so total ingestion time is about the same.
+
+- Extraction on TMP117 in Docker: 48 rows (39 obligations, 9 limits), 73 sections and
+  tables skipped, 94 s; before: 48 rows (39 / 9), 100 s. The pre-filter document had been
+  deleted with its expired test drawer, so rows could not be compared quote by quote.
+- "Koja je cijena" in Docker: over the new document, 8 distinct chunks; over the whole
+  cabinet, 8 distinct chunks, but the three documents uploaded before this round still
+  carry their old noise chunks ("SCALE 5.500", "23-Oct-2026") until they are uploaded
+  again.
+- QA evaluation (development): 97% / 97% / 97% answer accuracy, 100% abstention in all
+  modes, unchanged from round 3. The only miss is still the weight question.
+- The ten TMP117 questions on the re-uploaded document: 1-8 answered with correct values
+  and pages, 9 and 10 refused, as in round 3. Question 2 now cites only page 6 (before:
+  1 and 6) and question 6 adds two further pullup lines from pages 33-34.
+- `pytest`: 256 passed, no GPU, Ollama or network needed (in-memory Qdrant, fake
+  embedder and LLM). `ruff format` / `ruff check`: clean.
+
+**Not verified**
+- The developer-mode switch and the "Why?" panel were not looked at in a browser (no
+  browser automation installed); the request body and the setting are covered by
+  frontend tests and the build.
+- The owner's three older TMP117 uploads were left as they are; they keep their old
+  chunks until uploaded again.
