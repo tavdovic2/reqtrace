@@ -168,5 +168,8 @@
     "retrieved_one": "{{count}} retrieved passage",
     "retrieved_other": "{{count}} retrieved passages",
     "chunkMeta": "{{filename}}, page {{page}} · score {{score}}"
+  },
+  "devMode": {
+    "label": "Developer mode"
   }
 }

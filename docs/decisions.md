@@ -463,3 +463,12 @@ against current documentation and the installed packages.
   and "Return to Register Map." were stored on several pages. The first occurrence is
   kept. Uploading the same file twice is still allowed (drawers are independent);
   retrieval handles the copies.
+- **Developer mode hides "Why?".** The panel is a diagnostic tool, not part of the
+  answer. A "Developer mode" checkbox next to the language buttons, off by default and
+  stored in `localStorage` (`reqtrace.developerMode`), controls it. With it off the
+  frontend sends no `debug` field (the API default stays off) and shows no "Why?"; with
+  it on every `/ask` carries `debug: true` as in fix round 3. The request body is built
+  by one helper (`askBody`), which the frontend tests check. The setting is shared
+  between components through `useSyncExternalStore`, so switching it applies to the next
+  question without a reload; answers already shown keep their debug data hidden or shown
+  with the switch.

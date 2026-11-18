@@ -588,3 +588,8 @@ tests: `test_diversify_skips_repeated_points_and_identical_text` and
 `test_same_pdf_in_two_drawers_fills_the_context_with_distinct_chunks` (the second fails
 on the old code with 8 slots holding 4 distinct chunks, the reported pattern), plus
 `test_repeated_chunk_text_is_indexed_once`.
+
+**Task 3: developer mode.** `frontend/src/devMode.ts` holds the setting and builds the
+`/ask` body; `devMode.test.ts` checks that it is off by default, remembered, safe when
+storage throws, and that `debug` is sent only when it is on. Frontend: i18n check (128
+keys), Prettier, 9 tests and the build pass.

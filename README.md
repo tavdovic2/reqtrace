@@ -42,7 +42,10 @@ Ollama sized for a 6 GB GPU.
 - **Exact pages.** Chunks follow the document structure (sections, and every table as its
   own chunk with its heading path) and never span pages, so citations are exact.
 - **Web UI in English and Bosnian.** A filing cabinet, a notepad (conversation and
-  requirements) and a viewer that shows the cited PDF page.
+  requirements) and a viewer that shows the cited PDF page. A "Developer mode" switch
+  next to the language buttons (off by default, remembered in the browser) adds a "Why?"
+  panel under "not in the documents" answers: the searched phrasings, the retrieved
+  chunks with their scores and the discarded claims.
 - **Honest failure modes.** Corrupt PDFs, scanned PDFs without text, an empty drawer,
   Qdrant or Ollama being unreachable, and invalid LLM JSON (retried once) each produce a
   clear message.

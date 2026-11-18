@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import { api, type AnswerLine, type AskDebug, type AskResponse, type Drawer, type Source } from "../api";
+import { useDevMode } from "../devMode";
 import { useErrorMessage } from "../hooks";
 
 type Scope = "drawer" | "cabinet";
@@ -22,6 +23,7 @@ interface ConversationProps {
 export function Conversation({ openDrawer, onOpenSource }: ConversationProps) {
   const { t } = useTranslation();
   const errorMessage = useErrorMessage();
+  const devMode = useDevMode();
   const [scope, setScope] = useState<Scope>("cabinet");
   const [question, setQuestion] = useState("");
   const [history, setHistory] = useState<Exchange[]>([]);
@@ -45,7 +47,7 @@ export function Conversation({ openDrawer, onOpenSource }: ConversationProps) {
     setQuestion("");
     setPending(true);
     try {
-      const response = await api.ask(text, drawer?.id ?? null);
+      const response = await api.ask(text, drawer?.id ?? null, devMode);
       setHistory((h) => h.map((x) => (x.id === id ? { ...x, response } : x)));
     } catch (e) {
       const message = t("chat.error", { message: errorMessage(e) });
@@ -123,6 +125,7 @@ export function Conversation({ openDrawer, onOpenSource }: ConversationProps) {
 
 function ExchangeView({ exchange, onOpenSource }: { exchange: Exchange; onOpenSource: (s: Source) => void }) {
   const { t } = useTranslation();
+  const devMode = useDevMode();
   const { response } = exchange;
 
   return (
@@ -172,7 +175,7 @@ function ExchangeView({ exchange, onOpenSource }: { exchange: Exchange; onOpenSo
           ) : (
             <>
               <p className="not-found">{t("chat.notFound")}</p>
-              {response.debug && <WhyNotFound debug={response.debug} />}
+              {devMode && response.debug && <WhyNotFound debug={response.debug} />}
             </>
           )}
         </div>

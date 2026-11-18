@@ -1171,3 +1171,19 @@ button:where(:not(.drawer-front)):disabled {
     transition: none !important;
   }
 }
+
+/* Developer mode: an unobtrusive switch next to the language buttons. */
+.dev-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--paper);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.dev-mode-switch input {
+  margin: 0;
+}

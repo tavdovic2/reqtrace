@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import type { Health } from "../api";
+import { setDevMode, useDevMode } from "../devMode";
 import { LANGUAGES, setLanguage, type Language } from "../i18n";
 
 interface HeaderProps {
@@ -20,6 +21,7 @@ function healthProblem(health: Health | null, apiReachable: boolean): { key: str
 export function Header({ health, apiReachable }: HeaderProps) {
   const { t, i18n } = useTranslation();
   const problem = healthProblem(health, apiReachable);
+  const devMode = useDevMode();
 
   return (
     <header className="topbar">
@@ -36,6 +38,10 @@ export function Header({ health, apiReachable }: HeaderProps) {
             {t("health.ready", { model: health.llm_model })}
           </span>
         )}
+        <label className="dev-mode-switch">
+          <input type="checkbox" checked={devMode} onChange={(event) => setDevMode(event.target.checked)} />
+          {t("devMode.label")}
+        </label>
         <div className="language-switch" role="group" aria-label={t("language.label")}>
           {LANGUAGES.map((language: Language) => (
             <button

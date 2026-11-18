@@ -1,6 +1,8 @@
 // Typed client for the reqTrace API. All requests go to /api, which the Vite dev server
 // and nginx both forward to the FastAPI backend.
 
+import { askBody } from "./devMode";
+
 export const API_BASE = "/api";
 
 export interface Drawer {
@@ -166,10 +168,10 @@ export const api = {
     return request<DocumentInfo>(`/drawers/${drawerId}/documents`, { method: "POST", body: form });
   },
   deleteDocument: (id: number) => request<void>(`/documents/${id}`, { method: "DELETE" }),
-  // The UI always asks for the debug details: they cost no extra model call, and a
-  // "not in the documents" answer can then explain itself without asking again.
-  ask: (question: string, drawerId: number | null) =>
-    request<AskResponse>("/ask", json("POST", { question, drawer_id: drawerId, debug: true })),
+  // In developer mode the debug details come with every answer: they cost no extra model
+  // call, and a "not in the documents" answer can explain itself without asking again.
+  ask: (question: string, drawerId: number | null, devMode: boolean) =>
+    request<AskResponse>("/ask", json("POST", askBody(question, drawerId, devMode))),
   startExtraction: (docId: number) =>
     request<RequirementsTable>(`/documents/${docId}/requirements`, { method: "POST" }),
   getRequirements: (docId: number) => request<RequirementsTable>(`/documents/${docId}/requirements`),

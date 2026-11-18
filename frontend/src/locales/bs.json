@@ -175,5 +175,8 @@
     "retrieved_few": "{{count}} pronađena odlomka",
     "retrieved_other": "{{count}} pronađenih odlomaka",
     "chunkMeta": "{{filename}}, stranica {{page}} · ocjena {{score}}"
+  },
+  "devMode": {
+    "label": "Režim za programere"
   }
 }
