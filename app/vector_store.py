@@ -43,6 +43,7 @@ class ChunkPayload:
 class ScoredChunk:
     payload: ChunkPayload
     score: float
+    point_id: str = ""
 
 
 @contextmanager
@@ -228,7 +229,7 @@ class VectorStore:
                     with_payload=True,
                 )
         return [
-            ScoredChunk(ChunkPayload(**point.payload), point.score)
+            ScoredChunk(ChunkPayload(**point.payload), point.score, str(point.id))
             for point in response.points
             if point.payload
         ]

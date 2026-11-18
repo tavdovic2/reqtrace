@@ -577,3 +577,14 @@ comparable because TMP117 was being ingested at the same time.
 - GitHub Actions (no remote).
 
 **Suggested commit:** `fix: answer cross-language and notation questions, explain refusals, recognise introductory imperatives, show ingestion progress`
+
+## Fix round 4: duplicate chunks, noise chunks, developer mode
+
+**Task 1: duplicate chunks.** Root cause: the owner's Docker database holds
+`tmp117.pdf` three times (drawers "Datasheet", "TI datasheets" and a temporary test
+drawer), and the question was asked over the whole cabinet. Identical chunks of the
+copies rank next to each other; the page cap counts per document page. Regression
+tests: `test_diversify_skips_repeated_points_and_identical_text` and
+`test_same_pdf_in_two_drawers_fills_the_context_with_distinct_chunks` (the second fails
+on the old code with 8 slots holding 4 distinct chunks, the reported pattern), plus
+`test_repeated_chunk_text_is_indexed_once`.

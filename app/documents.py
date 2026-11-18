@@ -22,7 +22,7 @@ from app.errors import (
     PayloadTooLargeError,
     UnsupportedMediaTypeError,
 )
-from app.ingestion import IngestionError, chunk_blocks
+from app.ingestion import IngestionError, chunk_blocks, unique_chunks
 from app.pdf import PDF_MAGIC, InvalidPdfError, read_page_count
 from app.schemas import DocumentOut, DrawerOut
 from app.services import Services
@@ -275,7 +275,9 @@ def _index_document(services: Services, doc_id: int, drawer_id: int, filename: s
     parsed = time.monotonic()
     pages = max((block.page for block in blocks), default=0)
     _record_pages(services, doc_id, None)
-    chunks = chunk_blocks(blocks, settings.chunk_max_chars, settings.chunk_overlap_chars)
+    chunks = unique_chunks(
+        chunk_blocks(blocks, settings.chunk_max_chars, settings.chunk_overlap_chars)
+    )
     if not chunks:
         raise IngestionError(
             "No extractable text was found. The PDF is probably scanned; OCR is not supported."

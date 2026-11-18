@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Protocol
 
+from app.verification import normalize
+
 logger = logging.getLogger(__name__)
 
 BlockKind = Literal["heading", "text", "table"]
@@ -205,6 +207,24 @@ def chunk_blocks(blocks: list[Block], max_chars: int, overlap: int) -> list[Chun
             buffer.append(text)
     flush()
     return chunks
+
+
+def unique_chunks(chunks: list[Chunk]) -> list[Chunk]:
+    """Drop chunks whose text repeats an earlier chunk of the same document.
+
+    A repeated table condition line or a "Return to Register Map." link would otherwise
+    be stored as several points with identical vectors and fill several search slots.
+    The first occurrence (the lowest page) is kept.
+    """
+    seen: set[str] = set()
+    kept: list[Chunk] = []
+    for chunk in chunks:
+        key = normalize(chunk.text)
+        if key in seen:
+            continue
+        seen.add(key)
+        kept.append(chunk)
+    return kept
 
 
 class DoclingParser:

@@ -442,3 +442,24 @@ against current documentation and the installed packages.
   `documents.ingest_pages_done` (added by the column migration) and shown as "Reading…
   N / M pages", then "Indexing…". Each ingestion logs parse, embed and upsert time
   separately.
+
+## Fix round 4 (duplicates, noise chunks, developer mode)
+
+- **Duplicates came from the same PDF indexed more than once.** The reported list
+  ("Koja je cijena", whole cabinet) had 4 distinct chunks in 8 slots. The Docker
+  database held TMP117 three times (documents 5, 6 and 9 in three drawers). The copies
+  have identical vectors, so each copy of a chunk ranks right after the other in every
+  prefetch, and RRF gives them consecutive, falling scores (0.643, 0.500, 0.450). The
+  per-page cap counts per (document, page), so three copies of page 40 passed it. Qdrant
+  itself never returned one point twice: RRF fuses by point id.
+- **Retrieval deduplicates by point id and by text before the page cap.** Candidates are
+  taken in fused order; a chunk is skipped when its point id or its normalised text was
+  already picked, then the page cap applies, and the next distinct candidates fill the
+  slots. All fused candidates are fetched (each prefetch returns at most
+  `RETRIEVAL_PREFETCH_LIMIT`), so enough distinct chunks remain. Identical text from two
+  uploads is the same evidence, so the best-ranked copy is enough; the debug list is
+  built from the same list, so it shows each chunk once.
+- **Identical text within a document is indexed once.** On TMP117 a table condition line
+  and "Return to Register Map." were stored on several pages. The first occurrence is
+  kept. Uploading the same file twice is still allowed (drawers are independent);
+  retrieval handles the copies.

@@ -440,3 +440,48 @@ def test_uncited_claim_takes_the_citation_of_evidence_that_states_its_value() ->
         "cites no retrieved excerpt",
         "cites no retrieved excerpt",
     ]
+
+
+def test_diversify_skips_repeated_points_and_identical_text() -> None:
+    from app.retrieval import diversify
+    from app.vector_store import ChunkPayload, ScoredChunk
+
+    def chunk(doc: int, page: int, text: str, point: str) -> ScoredChunk:
+        return ScoredChunk(ChunkPayload(doc, doc, "t.pdf", page, "S", "text", text, 0), 1.0, point)
+
+    candidates = [
+        chunk(5, 40, "SCALE 5.500", "a"),
+        chunk(6, 40, "SCALE  5.500", "b"),  # the same PDF in another drawer
+        chunk(9, 40, "Scale 5.500", "c"),
+        chunk(5, 40, "SCALE 5.500", "a"),  # the same point again
+        chunk(5, 1, "Supply voltage 1.7 V to 5.5 V", "d"),
+        chunk(6, 1, "Supply voltage 1.7 V to 5.5 V", "e"),
+        chunk(5, 14, "Shutdown current 250 nA", "f"),
+    ]
+    picked = diversify(candidates, limit=8, max_per_page=2)
+    assert [c.point_id for c in picked] == ["a", "d", "f"]
+
+
+def test_same_pdf_in_two_drawers_fills_the_context_with_distinct_chunks(
+    client: TestClient, services: Services, tmp_path: Path
+) -> None:
+    lines = [
+        f"Section {n}: the operating temperature limit number {n} is {80 + n} C." for n in range(12)
+    ]
+    pdf = make_pdf(tmp_path / "dup.pdf", [lines[:6], lines[6:]])
+    services.settings.chunk_max_chars = 120
+    services.settings.chunk_overlap_chars = 0
+    for name in ("Datasheet", "TI datasheets"):
+        drawer = client.post("/drawers", json={"name": name}).json()
+        upload(client, drawer["id"], pdf)
+
+    chunks = retrieve(services, QUESTION)
+
+    texts = [c.payload.text for c in chunks]
+    assert len(texts) == len(set(texts))
+    per_page: dict[tuple[int, int], int] = {}
+    for c in chunks:
+        key = (c.payload.doc_id, c.payload.page)
+        per_page[key] = per_page.get(key, 0) + 1
+    assert max(per_page.values()) <= services.settings.retrieval_max_per_page
+    assert len({c.point_id for c in chunks}) == len(chunks)

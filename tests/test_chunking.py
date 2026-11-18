@@ -152,3 +152,20 @@ def test_unnumbered_headings_keep_their_levels_in_unnumbered_documents() -> None
         Block("text", "Create the screen.", 1),
     ]
     assert [c.section for c in chunk_blocks(blocks, max_chars=500, overlap=50)] == ["Task 1"]
+
+
+def test_repeated_chunk_text_is_indexed_once() -> None:
+    from app.ingestion import Chunk, unique_chunks
+
+    chunks = [
+        Chunk("Over free-air temperature range (unless otherwise noted)", 6, "6.5", "text"),
+        Chunk("Supply current 3.5 uA", 6, "6.5", "text"),
+        Chunk("Over free-air  temperature range (unless otherwise noted)", 7, "6.5", "text"),
+        Chunk("Return to Register Map.", 27, "7.6", "text"),
+        Chunk("Return to Register Map.", 30, "7.6", "text"),
+    ]
+    assert [(c.text[:14], c.page) for c in unique_chunks(chunks)] == [
+        ("Over free-air ", 6),
+        ("Supply current", 6),
+        ("Return to Regi", 27),
+    ]
