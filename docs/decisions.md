@@ -166,7 +166,7 @@ against current documentation and the installed packages.
   `services.py` (wiring), `errors.py` (domain errors mapped to HTTP codes), `pdf.py`
   (pypdfium2 access) and `export.py` (CSV/XLSX) keep route handlers free of logic.
 
-## Fix round 1 (requirement extraction quality, answers, layout)
+## Improving extraction quality, answers and layout
 
 - **No content examples in the extraction prompt.** The prompt contained the example
   "The supply voltage of output A shall be between 9 and 32 V DC.", and the model copied
@@ -272,7 +272,7 @@ against current documentation and the installed packages.
 - **Frontend unit tests use Node's built-in test runner** (`npm test`), so no test
   framework dependency was added.
 
-## Fix round 2 (scope of extraction, speed)
+## Narrowing the scope of extraction and speeding it up
 
 - **Two kinds of item, decided by rules.** Extraction now keeps only obligations and
   limits, as defined in the README. The kind is decided by deterministic rules in
@@ -331,7 +331,7 @@ against current documentation and the installed packages.
   3.7 s on the lab, 6.7 s against 10.1 s on the datasheet fixture, and 89 s against 142 s
   for TMP117. When it is on, a paraphrase that fails the support check, strengthens the
   modality or adds must/shall to a quote without it is removed, and the row is kept with
-  the quote only. That reverses fix round 1, where such rows were rejected; it lost
+  the quote only. That reverses the earlier rule, under which such rows were rejected; it lost
   genuine tasks whose paraphrase used synonyms.
 - **Rejection reasons were renamed.** "Requirement not supported by quote" no longer
   exists, because unsupported paraphrases are removed, not rejected. Rows are now rejected
@@ -343,7 +343,7 @@ against current documentation and the installed packages.
   of its group. On TMP117, 27 chunks became 9 calls.
 - **Thinking mode confirmed off; time is output length.** Every Ollama call is now
   logged with prompt tokens, output tokens, duration and thinking characters. The
-  round-1 run on TMP117 had 0 thinking characters across 187 calls. It used 135k prompt
+  earlier run on TMP117 had 0 thinking characters across 187 calls. It used 135k prompt
   and 52k output tokens in 1184 s of model time, about 23 ms per output token. Time was
   almost entirely generation, so fewer calls and shorter outputs were the levers.
 - **No parallel requests.** A second Ollama server with `OLLAMA_NUM_PARALLEL=2` loaded
@@ -354,7 +354,7 @@ against current documentation and the installed packages.
   settings were not changed.
 - **Fixture label changed by the definition, not by results.** In the lab fixture, "Each
   row shows the trail name and its length in kilometres." was a genuine requirement in
-  round 1. Under the new definition it is a description (no obligation wording, no
+  the first version. Under the new definition it is a description (no obligation wording, no
   instruction), so it is now listed as not to be extracted. The README states this
   trade-off. Two imperative tasks and a troubleshooting table were added to the lab
   fixture. The new datasheet fixture was written before the final rules were tuned on
@@ -368,14 +368,14 @@ against current documentation and the installed packages.
   hyphen at a line end is kept and joined.
 - **Highlight bug: a second chip on the same page.** The marks were computed only when
   pdf.js loaded the page text. Clicking another quote on a page that was already open
-  never recomputed them. On the round-1 Docker build the first chip showed 2 marks and the
+  never recomputed them. On the earlier Docker build the first chip showed 2 marks and the
   second chip on the same page 0. The page text is now cached and the marks are recomputed
   for every new passage; the same test shows 2 marks for both.
 - **Progress shows elapsed time and an estimate.** The API returns `elapsed_seconds`
   (from new start and finish timestamps). The UI estimates the remaining time as elapsed
   divided by calls done, times calls left.
 
-## Fix round 3 (refused answers, debug details, imperatives, ingestion)
+## Refused answers, debug details, imperatives and ingestion
 
 - **Cross-language retrieval: search the question and its English translation.** A
   Bosnian question about an English datasheet ("Koliko uređaja može biti na jednoj I2C
@@ -443,7 +443,7 @@ against current documentation and the installed packages.
   N / M pages", then "Indexing…". Each ingestion logs parse, embed and upsert time
   separately.
 
-## Fix round 4 (duplicates, noise chunks, developer mode)
+## Duplicate chunks, noise chunks and developer mode
 
 - **Duplicates came from the same PDF indexed more than once.** The reported list
   ("Koja je cijena", whole cabinet) had 4 distinct chunks in 8 slots. The Docker
@@ -467,7 +467,7 @@ against current documentation and the installed packages.
   answer. A "Developer mode" checkbox next to the language buttons, off by default and
   stored in `localStorage` (`reqtrace.developerMode`), controls it. With it off the
   frontend sends no `debug` field (the API default stays off) and shows no "Why?"; with
-  it on every `/ask` carries `debug: true` as in fix round 3. The request body is built
+  it on every `/ask` carries `debug: true`, as the UI did before the switch existed. The request body is built
   by one helper (`askBody`), which the frontend tests check. The setting is shared
   between components through `useSyncExternalStore`, so switching it applies to the next
   question without a reload; answers already shown keep their debug data hidden or shown

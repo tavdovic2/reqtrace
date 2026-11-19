@@ -1,5 +1,7 @@
 # reqTrace
 
+> **Status:** work in progress. The core features work and are tested; evaluation on real datasheets is next (see Roadmap).
+
 reqTrace is a self-hosted assistant for technical documentation such as datasheets,
 manuals and standards. It answers questions only from your PDFs and cites the file and
 page for every answer. When the documents do not contain the answer, it says so instead
@@ -206,7 +208,7 @@ question set in each search mode (`--mode dense|bm25|hybrid|all`). It reports:
 - **Answer accuracy**: the answer is given and contains every expected keyword.
 - **Abstention accuracy**: questions the document cannot answer get "not found".
 
-Results of a real run (2026-11-18, fix round 4) on the synthetic test datasheet:
+Results of a real run (2026-11-18) on the synthetic test datasheet:
 
 | Mode | Retrieval hit rate @5 | Answer accuracy | Abstention accuracy |
 |---|---|---|---|
@@ -216,9 +218,11 @@ Results of a real run (2026-11-18, fix round 4) on the synthetic test datasheet:
 
 30 answerable and 7 unanswerable questions · LLM `qwen3:4b` ·
 dense embeddings `intfloat/multilingual-e5-large` · 569 s for all three modes on an
-RTX 3050 (6 GB). The numbers did not change with the duplicate and noise fixes of round 4. The set includes Bosnian questions about the English document and
-values printed in other notations ("0.1-µF", "four"). The same set with the code
-before fix round 3 gave 93% / 90% / 93% answer accuracy and the same 100% abstention:
+RTX 3050 (6 GB). The numbers did not change after duplicate removal and noise
+filtering were added to retrieval and ingestion. The set includes Bosnian questions
+about the English document and values printed in other notations ("0.1-µF",
+"four"). The same set with the code before cross-language retrieval and the
+improved number matching gave 93% / 90% / 93% answer accuracy and the same 100% abstention:
 the Bosnian questions about the transmitter count were refused. The hit rate is still
 measured on the first 5 chunks, although the model now sees 8. The one remaining
 "miss" is the weight question: in dense and hybrid mode the answer "approximately 120
@@ -252,7 +256,7 @@ ground truth ([eval/extraction_fixtures.py](eval/extraction_fixtures.py)):
   history, absolute maximum ratings, recommended operating conditions, a register map,
   behaviour descriptions, layout guidelines, a troubleshooting table and a legal notice.
 
-Results of a real run with `qwen3:4b`, paraphrase off (2026-11-16, fix round 3):
+Results of a real run with `qwen3:4b`, paraphrase off (2026-11-16):
 
 | Fixture | Rows | Precision obligation | Recall obligation | Precision limit | Recall limit | s/call |
 |---|---|---|---|---|---|---|
@@ -287,8 +291,8 @@ Results:
 | Rejected: requirement not supported / not an obligation or limit | 96 | 33 |
 
 The ten limits were the eight rows of the absolute maximum ratings and recommended
-operating conditions tables, a bus timing row and the stated supply range. Since fix
-round 3 timing rows are never limits: a Docker run after that change saved 48 rows (39
+operating conditions tables, a bus timing row and the stated supply range. Timing
+rows are now never limits: a Docker run after that change saved 48 rows (39
 obligations, 9 limits) in 100 s, and the timing row is gone. The
 obligations come from the pin table, the application, power-supply and layout sections.
 
@@ -339,8 +343,8 @@ More decisions, including where the build differs from the original plan, are in
   recommended PCB layout minimizes self-heating"). The verbatim quote is always shown.
 - **Skipping depends on headings.** Sections are skipped by their heading path. If the
   PDF parser misses a heading, its text is judged as part of the previous section.
-  Documents ingested before fix round 2 keep their old section paths; upload them again
-  to get the improved section detection.
+  Documents ingested with an older version of reqTrace keep their old section paths;
+  upload them again to get the improved section detection.
 - **Only the model's candidates are judged.** If the model does not propose an
   obligation, the rules never see it. Recall on real documents is not measured.
 - **Timing tables are never treated as limits** (see "What is extracted"). Only
