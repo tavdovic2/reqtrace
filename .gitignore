@@ -34,3 +34,6 @@ Thumbs.db
 
 # Local sample documents (e.g. third-party datasheets) are never committed
 samples/*.pdf
+
+# Local development notes
+docs/decisions.md

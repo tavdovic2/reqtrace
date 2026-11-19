@@ -330,9 +330,6 @@ normal server, so extraction stays sequential (`EXTRACTION_CONCURRENCY=1`).
   then the decision, then the answer. With the decision first, the 4B model abstained on
   most answerable questions (answer accuracy 24% → 96% after the change).
 
-More decisions, including where the build differs from the original plan, are in
-[docs/decisions.md](docs/decisions.md).
-
 ## Limitations
 
 - **No OCR.** Scanned PDFs are rejected with a clear message.
