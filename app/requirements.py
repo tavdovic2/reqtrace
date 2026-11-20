@@ -47,6 +47,7 @@ from app.verification import (
     drop_foreign_colons,
     is_fragment,
     locate_quote,
+    locate_table_row,
     modality_preserved,
     normalize,
     numbers_in,
@@ -326,7 +327,21 @@ def _locate_in_group(
     located = _locate_exactly_as_given(quote, group, page_text, services)
     if located is None and (_ROW_MARKER.match(quote) or ";" in quote):
         located = _locate_exactly_as_given(untable(quote), group, page_text, services)
+    if located is None:
+        located = _locate_table_row_in_group(untable(quote), group, page_text)
     return located
+
+
+def _locate_table_row_in_group(
+    row: str, group: Group, page_text: Callable[[int], str]
+) -> tuple[ChunkPayload, int, int] | None:
+    """A table row whose cells the parser read in another word order (pages that hold
+    one of the group's tables only)."""
+    for page in dict.fromkeys(c.page for c in group.chunks if c.kind == "table"):
+        span = locate_table_row(row, page_text(page))
+        if span is not None:
+            return _context_chunk(row, group, page), *span
+    return None
 
 
 def _locate_exactly_as_given(
@@ -526,11 +541,15 @@ def limit_table_rows(
     missing = 0
     for row in limit_rows(chunk.text):
         match = locate_quote(row, text, settings.quote_match_threshold, settings.quote_min_chars)
-        if match is None:
-            logger.info("Limit row not on page %d: %r", chunk.page, row)
-            missing += 1
-            continue
-        start, end = whole_lines(text, match.start, match.end)
+        if match is not None:
+            start, end = whole_lines(text, match.start, match.end)
+        else:
+            span = locate_table_row(row, text)
+            if span is None:
+                logger.info("Limit row not on page %d: %r", chunk.page, row)
+                missing += 1
+                continue
+            start, end = span
         quote = text[start:end]
         kind = classify(quote, chunk.section)
         if kind is not None:

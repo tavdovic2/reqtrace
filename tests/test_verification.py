@@ -4,6 +4,7 @@ from app.verification import (
     drop_foreign_colons,
     is_fragment,
     locate_quote,
+    locate_table_row,
     modality_preserved,
     normalize,
     normalize_with_map,
@@ -235,3 +236,42 @@ def test_words_from_neighbouring_rows_that_the_quote_also_uses_are_trimmed() -> 
     match = locate("Ingress protection, M12 connector; IP67", page)
     assert match is not None
     assert page[match.start : match.end] == "Ingress protection, M12 connector IP67"
+
+
+RATINGS_PAGE = (
+    "5.1 Absolute Maximum Ratings\n"
+    "Parameter MIN MAX UNIT\n"
+    "Supply voltage, V+ -0.3 6 V\n"
+    "Voltage at SCL, SDA and\n"
+    "ALERT\n"
+    "-0.3 6 V\n"
+    "Junction temperature -55 150 °C\n"
+)
+
+
+def test_table_row_with_cell_words_in_another_order_is_found() -> None:
+    # Docling read the wrapped cell "Voltage at SCL, SDA and / ALERT" in the wrong order.
+    span = locate_table_row("Voltage at SCL, ALERT SDA and -0.3 6 V", RATINGS_PAGE)
+    assert span is not None
+    assert RATINGS_PAGE[span[0] : span[1]] == "Voltage at SCL, SDA and\nALERT\n-0.3 6 V"
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        "Voltage at SCL, ALERT SDA and -0.3 7 V",  # wrong value
+        "Voltage at SCL, ALERT SDA and 0.3 6 V",  # missing sign
+        "Voltage at SCL, ALERT SDA and -0.3 6 mV",  # wrong unit
+        "Voltage at SCL, ALERT SDA and -0.3 V",  # missing value
+        "Junction temperature -55 155 °C",
+        "Parameter MIN MAX UNIT",  # no values
+    ],
+)
+def test_table_row_with_a_wrong_or_missing_value_never_matches(row: str) -> None:
+    assert locate_table_row(row, RATINGS_PAGE) is None
+
+
+def test_table_row_match_does_not_borrow_a_neighbouring_row() -> None:
+    span = locate_table_row("Supply voltage, V+ -0.3 6 V", RATINGS_PAGE)
+    assert span is not None
+    assert RATINGS_PAGE[span[0] : span[1]] == "Supply voltage, V+ -0.3 6 V"

@@ -657,3 +657,23 @@ def test_testing_and_committing_instructions_get_the_process_type() -> None:
     )
     assert isinstance(tested, Candidate) and tested.type == "process"
     assert isinstance(added, Candidate) and added.type == "functional"
+
+
+def test_ratings_row_with_a_garbled_multi_line_cell_is_read_as_a_limit(
+    services: Services,
+) -> None:
+    from app.requirements import limit_table_rows
+
+    page = "5.1 Absolute Maximum Ratings\nVoltage at SCL, SDA and\nALERT\n-0.3 6 V\n"
+    table_chunk = chunk(
+        "5 Specifications > 5.1 Absolute Maximum Ratings",
+        "| Parameter | MIN | MAX | UNIT |\n| --- | --- | --- | --- |\n"
+        "| Voltage at SCL, ALERT | SDA and -0.3 | 6 | V |",
+        2,
+        "table",
+    )
+    rows, missing = limit_table_rows(table_chunk, lambda _page: page, services)
+    assert missing == 0
+    assert [(r.kind, r.quote) for r in rows] == [
+        ("limit", "Voltage at SCL, SDA and\nALERT\n-0.3 6 V")
+    ]
