@@ -1,5 +1,7 @@
 # reqTrace
 
+[![CI](https://github.com/tavdovic2/reqtrace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tavdovic2/reqtrace/actions/workflows/ci.yml?query=branch%3Amain)
+
 > **Status:** work in progress. The core features work and are tested; they are measured on one real datasheet so far (see Evaluation and Roadmap).
 
 reqTrace is a self-hosted assistant for technical documentation such as datasheets,
@@ -459,6 +461,11 @@ ruff check . && ruff format --check .
 pytest -q                                   # no GPU, Ollama or network needed
 cd frontend && npm run check:i18n && npm run format:check && npm test && npm run build
 ```
+
+CI runs these checks in the jobs `backend` and `frontend`. A third job, `docker`, builds
+both images without pushing them. CI runs on pull requests and on pushes to `main`.
+[docs/repository-settings.md](docs/repository-settings.md) lists the GitHub settings that
+make these checks required before merging.
 
 ## License
 
