@@ -26,7 +26,7 @@ vector_store.py  Qdrant collection, upsert, delete, dense / bm25 / hybrid search
 retrieval.py     scope filter (drawer, documents) + search
 qa.py            prompt, structured answer, citation → sources
 requirements.py  planning, grouped model calls, verification, deduplication, storage
-extraction_scope.py  what is in scope: skipped sections and tables, obligation and limit rules
+extraction_scope.py  what is in scope: skipped, screened and full sections, tables, obligation and limit rules
 verification.py  normalisation with index map, quote location (exact page span),
                  paraphrase support, modality, fragments
 language.py      Bosnian / English detection for the answer language
@@ -121,17 +121,18 @@ sequenceDiagram
     API->>API: Ollama reachable? document ready? not already running?
     API-->>UI: 202 (status=running, started_at)
     API->>Q: scroll all chunks of the document
-    API->>API: plan: skip sections by heading (EXTRACTION_SKIP_SECTIONS) and tables by header shape;<br/>ratings / operating-conditions tables aside; group the rest per top-level section
+    API->>API: plan by whole heading: skip (EXTRACTION_SKIP_SECTIONS), screen descriptive sections<br/>(keep only sentences with obligation wording), skip tables by header shape;<br/>ratings / operating-conditions tables aside; group per top-level section, screened sentences apart
     loop every ratings table
-        API->>PDF: locate each data row with values, widen to the whole line → limit
+        API->>PDF: locate each data row with values (or its words in any order, values exact) → limit
     end
     loop every group (one model call)
         API->>LLM: excerpts (tables as plain rows) → JSON schema {requirements: [quote, type, (paraphrase)]}
         API->>PDF: locate the quote on one of the group's pages (exact, fuzzy, or without row format)
-        API->>API: table quote → whole line; classify: obligation / limit / description (dropped)
+        API->>API: table quote → whole line; classify: obligation / limit / description (dropped);<br/>from screened sentences only obligations
         API->>API: optional paraphrase kept only if faithful, else removed (row kept)
         API->>DB: progress (calls done / total)
     end
+    API->>API: passive recommendations in the sent text, by rule, through the same checks
     API->>API: join parts of one sentence; one row per quote
     API->>DB: replace requirements (kind, quote, ...), rejection counts, skipped count, finished_at
     UI->>API: GET /documents/{id}/requirements (polling: elapsed_seconds, done/total; then ?format=csv|xlsx)

@@ -26,11 +26,15 @@ Ollama sized for a 6 GB GPU.
   opens the PDF page with the evidence passage marked in yellow. If the passage cannot
   be located exactly, the page is shown without a mark.
 - **Obligation and limit extraction** (see [What is extracted](#what-is-extracted)).
-  1. Sections that cannot hold either are skipped before any model call. This covers
-     features, description, register maps, revision history, legal notices and
-     tables of known shapes such as test steps or troubleshooting.
+  1. Each section is read in full, screened or skipped, decided by its whole heading.
+     Front and back matter (revision history, contents, legal notices, packaging and
+     ordering) and tables of known shapes such as test steps or troubleshooting are
+     skipped before any model call. Descriptive sections (features, description,
+     detailed description, characteristics, register maps) are screened: only their
+     sentences with obligation wording or an instruction go to the model.
   2. Rows of ratings and operating-conditions tables are read directly as limits.
-  3. The remaining text goes to the LLM in a few grouped calls.
+  3. The remaining text goes to the LLM in a few grouped calls. Passive recommendations
+     ("A 0.1-µF capacitor is recommended") are also taken by rule, without the model.
   4. Every proposed quote must be found on its page of the PDF's own text layer. The
      stored quote is the exact span of page text, never the model's transcription.
   5. Fixed rules then decide whether the quote is an obligation, a limit or a
@@ -67,8 +71,12 @@ reqTrace extracts exactly two kinds of item, and the table shows which one each 
   something. This covers "shall" and "must" sentences, explicit recommendations ("is
   recommended", "should"), and instructions such as "Use ...", "Avoid ..." or "Place ...",
   also after a short introductory phrase ("Below the summary row, add ...", "Before the
-  lecture, read ..."). "When a filter matches nothing, the empty state says so" stays
-  out: after the comma comes a subject with its verb, not an instruction.
+  lecture, read ...") and after a purpose phrase without a comma ("To minimize leakage
+  locate the sensor ...", "For best accuracy place ..."). An instruction verb is either
+  on a list of common ones or recognised by its form: a base-form verb followed by an
+  article or pronoun ("Miniaturize the board", "Extend these layers"). "When a filter
+  matches nothing, the empty state says so" stays out: after the comma comes a subject
+  with its verb, not an instruction.
 - **Limit**: a specified boundary the product must be operated within, with values and
   units. Typically this is a row of an absolute maximum ratings or recommended operating
   conditions table.
@@ -88,11 +96,32 @@ documentation, footnotes, table headers, revision history, tables of contents, o
 and packaging information, related documentation, trademarks, legal notices,
 troubleshooting tables, test inputs and summaries.
 
+**Obligations inside descriptive sections are still found.** Datasheets put
+programming rules ("Do not perform any I2C writes until programming is complete") in
+the detailed description and the register map. Those sections are screened: a rule
+scan keeps only the sentences with obligation wording or an instruction, the model
+sees just those, numbered, and names the ones that are obligations. Each named sentence
+then passes the same checks as a quote, and only obligations are accepted from these
+sections, never limits. The tables of a descriptive section (parameter tables, register
+maps, bit fields) are not read.
+
 **Descriptions of how the device behaves are not extracted, even when they matter.**
 "The device acknowledges each data byte" is useful knowledge, but nobody is told to do
 anything, so it is not a row in this table. Ask about it in the conversation instead.
 A requirement written as a plain present-tense statement ("Each row shows the trail
 name") is left out for the same reason.
+
+**Expected behaviour in task lists is not extracted.** Assignments often describe the
+result instead of instructing: "The list updates when a chip is pressed", or a table of
+inputs and expected outputs. reqTrace leaves both out, for three reasons. No rule can
+tell such a sentence from a description: "When a filter matches nothing, the empty
+state says so" has the same form, and on a datasheet the same form is "The device
+acknowledges each data byte". Deciding it per sentence would hand the decision back to
+the model, which is what the fixed rules avoid. And the task that the behaviour belongs
+to is normally stated as an instruction next to it ("Create a TrailList screen that
+shows all trails"), which is extracted; an input/expected-output table checks that task
+rather than adding one. A separate, flagged kind for such sentences would be possible
+later, but it would need its own evaluation so that it cannot lower datasheet precision.
 
 ## Architecture
 
@@ -177,7 +206,9 @@ All settings are environment variables (or a `.env` file; see `.env.example`).
 | `QUOTE_MATCH_THRESHOLD` | `90` | Fuzzy match score (0–100) a quote needs |
 | `QUOTE_MIN_CHARS` | `15` | Shorter quotes are rejected |
 | `REQUIREMENT_SUPPORT_THRESHOLD` | `0.75` | Share (0–1) of a paraphrase's significant terms its quote must contain |
-| `EXTRACTION_SKIP_SECTIONS` | features, description, register maps, … | JSON list of heading words whose sections are skipped before any model call |
+| `EXTRACTION_SKIP_SECTIONS` | revision history, contents, legal notices, packaging, … | JSON list of regular expressions; a section whose heading (without its number) matches one in full is not read |
+| `EXTRACTION_SCREEN_SECTIONS` | detailed description, overview, characteristics, register maps, … | The same for descriptive sections: only sentences with obligation wording go to the model, tables are not read |
+| `EXTRACTION_SCREEN_TOP_SECTIONS` | description, features, applications | The same, but only for the first heading of a section path (the front page of a datasheet) |
 | `EXTRACTION_PARAPHRASE` | `false` | Ask the model for a paraphrase of each quote (slower; see Evaluation) |
 | `EXTRACTION_GROUP_CHARS` | `3000` | Size of one model call: consecutive chunks of a top-level section are grouped up to this many characters |
 | `EXTRACTION_CONCURRENCY` | `1` | Parallel model calls; only useful when Ollama has parallel slots that fit in VRAM |
@@ -239,15 +270,17 @@ embeddings `intfloat/multilingual-e5-large` on the CPU · Windows 11.
 
 | Benchmark | Mode | Hit rate @5 | Hit rate @8 | Answer accuracy | Refusal accuracy | Avg answer time |
 |---|---|---|---|---|---|---|
-| synthetic | dense | 97% | 100% | 100% | 100% | 4.2 s |
-| synthetic | bm25 | 97% | 97% | 97% | 100% | 3.6 s |
-| synthetic | hybrid | 97% | 100% | 100% | 100% | 3.2 s |
-| real (TMP117) | dense | 92% | 92% | 73% | 100% | 6.4 s |
-| real (TMP117) | bm25 | 100% | 100% | 73% | 100% | 7.3 s |
-| real (TMP117) | hybrid | 96% | 100% | 85% | 83% | 5.9 s |
+| synthetic | dense | 97% | 100% | 100% | 100% | 4.5 s |
+| synthetic | bm25 | 97% | 97% | 97% | 100% | 4.0 s |
+| synthetic | hybrid | 97% | 100% | 100% | 100% | 3.8 s |
+| real (TMP117) | dense | 92% | 92% | 73% | 100% | 6.6 s |
+| real (TMP117) | bm25 | 100% | 100% | 73% | 100% | 7.0 s |
+| real (TMP117) | hybrid | 96% | 100% | 85% | 83% | 6.1 s |
 
-Synthetic: 30 answerable and 7 unanswerable questions (5 in Bosnian), ingestion 30 s.
-TMP117: 26 answerable and 6 unanswerable questions (8 in Bosnian), ingestion 393 s.
+Synthetic: 30 answerable and 7 unanswerable questions (5 in Bosnian), ingestion 28 s.
+TMP117: 26 answerable and 6 unanswerable questions (8 in Bosnian), ingestion 412 s.
+These are the runs after the extraction changes of issue #2; the accuracies are the
+same as in the first run that day, only the times differ by a few tenths of a second.
 
 By language, hybrid mode:
 
@@ -307,54 +340,70 @@ ground truth ([eval/extraction_fixtures.py](eval/extraction_fixtures.py)):
   description after an introductory phrase ("When a filter matches nothing, the empty
   state says so."), code, a test table, a troubleshooting table and closing remarks;
 - **datasheet**: a datasheet-style document with a feature list, overview, revision
-  history, absolute maximum ratings, recommended operating conditions, a register map,
-  behaviour descriptions, layout guidelines, a troubleshooting table and a legal notice.
+  history, absolute maximum ratings (one row has a cell that wraps over two lines),
+  recommended operating conditions, a register map, behaviour descriptions, layout
+  guidelines, a troubleshooting table and a legal notice. It also has an obligation in
+  the "Description" overview and one in the detailed description's overview, an
+  instruction after a purpose phrase without a comma, an instruction whose verb is not
+  on the verb list, a passive recommendation, and two descriptions that must stay out.
 
-Results of a real run with `qwen3:4b`, paraphrase off (2026-11-16):
+Results of real runs with `qwen3:4b`, paraphrase off (2026-11-20). "Before" is the code
+before issue #2 run on the same, extended fixtures:
 
-| Fixture | Rows | Precision obligation | Recall obligation | Precision limit | Recall limit | s/call |
+| Fixture | Version | Rows | Precision obligation | Recall obligation | Precision limit | Recall limit | s/call |
+|---|---|---|---|---|---|---|---|
+| reading | before | 0 | n/a | n/a | n/a | n/a | 1.8 |
+| reading | after | 0 | n/a | n/a | n/a | n/a | 1.9 |
+| lab assignment | before | 15 | 1.00 | 1.00 | n/a | n/a | 2.8 |
+| lab assignment | after | 15 | 1.00 | 1.00 | n/a | n/a | 2.9 |
+| datasheet | before | 12 | 1.00 | 0.64 | 1.00 | 0.83 | 5.3 |
+| datasheet | after | 16 | 1.00 | 0.91 | 1.00 | 1.00 | 3.9 |
+
+Before, the datasheet missed the wrapped ratings row (Docling reads the two-line cell
+"Voltage at SCL, SDA and ALERT" in the wrong word order), both obligations in
+descriptive sections, the instruction without a comma and the verb outside the list.
+After, the only miss is "Wait at least 2 ms after power-up before the first read." in
+the detailed description: the screen sends it to the model, which does not name it as
+an obligation (in two runs out of two). The fixtures were written alongside the rules
+they test; they show that the targeted failure modes are handled, not how well the
+rules generalise.
+
+**TMP117 against hand labels** (`python -m eval.run_eval --dataset tmp117`). "Before"
+is the run of issue #1, "after" the run with the changes of issue #2, both on
+2026-11-20 on the same machine:
+
+| Kind | Version | Rows | Precision | Required labels | Found | Recall |
 |---|---|---|---|---|---|---|
-| reading | 0 | n/a | n/a | n/a | n/a | 4.9 |
-| lab assignment | 15 | 1.00 | 1.00 | n/a | n/a | 3.1 |
-| datasheet | 11 | 1.00 | 1.00 | 1.00 | 0.83 | 4.3 |
+| obligation | before | 39 | 100% | 67 | 51 | 76% |
+| obligation | after | 58 | 100% | 67 | 65 | 97% |
+| limit | before | 9 | 100% | 8 | 8 | 100% |
+| limit | after | 9 | 100% | 8 | 8 | 100% |
+| all | before | 48 | 100% | 75 | 59 | 79% |
+| all | after | 67 | 100% | 75 | 73 | 97% |
 
-The missed limit is "Voltage at SCL, SDA and ALERT". Docling reads that two-line table
-cell in the wrong word order, so the row cannot be matched to the page text. The
-fixtures were written alongside the rules they test; they show that the targeted
-failure modes are handled, not how well the rules generalise.
+Extraction took 85 s after against 75 s before (+13%). Measured the same day with the
+same harness (`python -m eval.run_extraction_eval --pdf samples/tmp117.pdf`), the
+version before took 81 s and the version after 95 s (+17%). Of the 34 optional labels
+(timing rows, ESD ratings, generic I2C rules, legal text; see
+[eval/tmp117/README.md](eval/tmp117/README.md)), 7 were extracted after and 2 before.
+Every saved row states a labelled item.
 
-**TMP117 against hand labels** (`python -m eval.run_eval --dataset tmp117`, the same
-run as above, 75 s):
-
-| Kind | Rows | Precision | Required labels | Found | Recall |
-|---|---|---|---|---|---|
-| obligation | 39 | 100% | 67 | 51 | 76% |
-| limit | 9 | 100% | 8 | 8 | 100% |
-| all | 48 | 100% | 75 | 59 | 79% |
-
-Every saved row states a labelled item, and all limits are found. 34 further labels
-are optional (timing rows, ESD ratings, generic I2C rules, legal text; see
-[eval/tmp117/README.md](eval/tmp117/README.md)); 2 of them were extracted. The 16
-missed obligations:
-
-- 8 in the EEPROM programming and serial-interface subsections (pages 18–22), for
-  example "Do not perform any I2C writes until programming is complete". The skip
-  word "description", meant for the "3 Description" overview, also matches the
-  heading "7 Detailed Description", so that whole chapter is skipped.
-- 2 in the register map ("do not delete or reprogram" the EEPROM1 and EEPROM3
-  registers), which is skipped by design.
-- 6 layout and averaging instructions (pages 34–36): verbs missing from the
-  instruction list ("extend", "design", "miniaturize"), introductory phrases without a
-  comma ("To minimize ... leakage to surrounding air cover sensor ..."), and one
-  recommendation that the model did not propose.
+The two obligations still missed are screened sentences that the model did not name:
+"Only reprogram the general-purpose EEPROM[4:1] locations if NIST traceability is not
+desired" (page 18) and the EEPROM1 register's "To support NIST traceability do not
+delete or reprogram the EEPROM[1] register" (page 30). Both are found on the page and
+classified as obligations when given directly; the same rule for EEPROM3 (page 32, with
+a comma) is found.
 
 `python -m eval.run_extraction_eval --pdf <file>` measures an unlabelled document. On
 the public TI TMP117 datasheet (50 pages, not shipped with the repository) the tables
-compare the previous version with the current one.
+below compare the first version with the one before issue #2. With issue #2 the same
+harness reports 51 chunks in 11 calls (2 of them screened sentences), 57 sections and
+tables skipped, 49 sections screened, 3,710 output tokens and 95 s.
 
 Pipeline:
 
-| | Previous version | Current |
+| | First version | Before issue #2 |
 |---|---|---|
 | Chunks sent to the model | 187 (187 calls) | 27 (9 calls), plus 2 ratings tables read directly |
 | Sections and tables skipped | 0 | 78 |
@@ -363,7 +412,7 @@ Pipeline:
 
 Results:
 
-| | Previous version | Current |
+| | First version | Before issue #2 |
 |---|---|---|
 | Rows saved | 334 (137 typed "other") | 50 (40 obligations, 10 limits) |
 | Rejected: quote not on page | 160 | 1 |
@@ -397,10 +446,14 @@ normal server, so extraction stays sequential (`EXTRACTION_CONCURRENCY=1`).
   obligation, a limit or a description is decided by fixed rules on the quote, not by
   the model's opinion. A paraphrase, when enabled, is shown only if it uses the quote's
   terms, numbers and strength, and never adds "must" to a plain statement.
-- **Why skip sections first.** On a 50-page datasheet most text is features, behaviour
-  descriptions, register maps and legal pages. Skipping them by heading before any
-  model call removed more than 80% of the chunks, most of the false rows and most of the
-  time.
+- **Why skip and screen sections first.** On a 50-page datasheet most text is
+  features, behaviour descriptions, register maps and legal pages. Deciding by heading
+  before any model call removed more than 80% of the chunks, most of the false rows and
+  most of the time. Descriptive sections are screened rather than skipped, because they
+  do hold some obligations; the screen sends only the sentences with obligation wording,
+  so the cost stays small. A rule matches a whole heading, never a word inside it:
+  "Description" is the front-page overview, "Detailed Description" is not the same
+  section.
 - **Why CPU embeddings.** On a 6 GB GPU every megabyte goes to the LLM and its context.
   Embedding a datasheet on the CPU takes seconds, while a model that does not fit in VRAM
   is many times slower.
@@ -412,20 +465,27 @@ normal server, so extraction stays sequential (`EXTRACTION_CONCURRENCY=1`).
 ## Limitations
 
 - **No OCR.** Scanned PDFs are rejected with a clear message.
-- **The rules are lexical.** Obligations are recognised by wording and by a list of
-  instruction verbs, and limits by numbers in ratings sections or next to boundary
-  words. A recommendation phrased unusually is missed, and a descriptive sentence that
-  happens to contain "recommended" or "required" can be kept (for example "The
-  recommended PCB layout minimizes self-heating"). The verbatim quote is always shown.
-- **Skipping depends on headings.** Sections are skipped by their heading path. If the
-  PDF parser misses a heading, its text is judged as part of the previous section.
-  Documents ingested with an older version of reqTrace keep their old section paths;
-  upload them again to get the improved section detection.
-- **Only the model's candidates are judged.** If the model does not propose an
-  obligation, the rules never see it. On TMP117, recall of obligations is 76% (see
-  Evaluation).
-- **Skip words match whole chapters.** "description" skips "7 Detailed Description" as
-  well as the overview, so device programming and interface rules are not extracted.
+- **The rules are lexical.** Obligations are recognised by wording, by a list of
+  instruction verbs and by the form of a verb at the start of a clause; limits by
+  numbers in ratings sections or next to boundary words. A recommendation phrased
+  unusually is missed, and a descriptive sentence that happens to contain "recommended"
+  or "required" can be kept (for example "The recommended PCB layout minimizes
+  self-heating"). Without a comma, where a purpose phrase ends is a guess: in "For low
+  power the device enters shutdown" the word "power" reads as an instruction. Such a
+  sentence is kept only if the model also proposes it. The verbatim quote is always
+  shown.
+- **Scope depends on headings.** Sections are skipped, screened or read by their heading
+  path. If the PDF parser misses a heading, its text is judged as part of the previous
+  section. Documents ingested with an older version of reqTrace keep their old section
+  paths; upload them again to get the improved section detection.
+- **Only the model's candidates are judged**, apart from passive recommendations, which
+  are also taken by rule. If the model does not propose another obligation, the rules
+  never see it.
+- **Screened sections rely on wording.** In a descriptive section only sentences with
+  obligation wording or an instruction reach the model; an obligation phrased as a
+  plain statement there is missed. Register-map and other tables of descriptive
+  sections are never read, so a "do not write" note that exists only inside a
+  bit-field table is not extracted.
 - **Claims without numbers need an explicit citation.** A correct text answer ("as
   close as possible to the supply pins") is dropped when the model does not cite an
   excerpt for it; the fallback that finds the excerpt works only for numbers.
