@@ -1,0 +1,109 @@
+{"id": "L01", "page": 5, "kind": "limit", "terms": ["supply voltage", "-0.3", "6"], "note": "Absolute maximum ratings: supply voltage."}
+{"id": "L02", "page": 5, "kind": "limit", "terms": ["voltage at scl", "-0.3", "6"], "note": "Absolute maximum ratings: voltage at SCL, SDA, ALERT and ADD0."}
+{"id": "L03", "page": 5, "kind": "limit", "terms": ["junction temperature", "-55", "155"], "note": "Absolute maximum ratings: operating junction temperature."}
+{"id": "L04", "page": 5, "kind": "limit", "terms": ["storage temperature", "-65", "155"], "note": "Absolute maximum ratings: storage temperature."}
+{"id": "L05", "page": 5, "kind": "limit", "terms": ["1.8", "3.3", "5.5"], "note": "Recommended operating conditions: supply voltage, TA -55 to 150 °C."}
+{"id": "L06", "page": 5, "kind": "limit", "terms": ["70", "1.7", "5.5"], "note": "Recommended operating conditions: supply voltage, TA -55 to 70 °C."}
+{"id": "L07", "page": 5, "kind": "limit", "terms": ["vi/o", "0", "5.5"], "note": "Recommended operating conditions: voltage on SCL, SDA, ALERT and ADD0."}
+{"id": "L08", "page": 5, "kind": "limit", "terms": ["free-air temperature", "-55", "150"], "note": "Recommended operating conditions: operating free-air temperature."}
+{"id": "L09", "page": 5, "kind": "limit", "terms": ["human-body model", "2000"], "optional": true, "note": "ESD rating (HBM). A handling rating rather than an operating boundary."}
+{"id": "L10", "page": 5, "kind": "limit", "terms": ["charged-device model", "1000"], "optional": true, "note": "ESD rating (CDM). A handling rating rather than an operating boundary."}
+{"id": "L11", "page": 35, "kind": "limit", "terms": ["power-supply range", "1.7", "5.5"], "optional": true, "note": "Restates the operating supply range in the power-supply section."}
+{"id": "L12", "page": 7, "kind": "limit", "terms": ["number of writes", "1,000"], "optional": true, "note": "EEPROM write endurance (switching characteristics)."}
+{"id": "L13", "page": 7, "kind": "limit", "terms": ["scl operating frequency", "400"], "optional": true, "note": "Timing row. Timing tables are excluded from limits by design (README)."}
+{"id": "L14", "page": 7, "kind": "limit", "terms": ["bus free time", "1300"], "optional": true, "note": "Timing row (tBUF), excluded by design."}
+{"id": "L15", "page": 7, "kind": "limit", "terms": ["hold time after repeated start", "600"], "optional": true, "note": "Timing row (tHD;STA), excluded by design."}
+{"id": "L16", "page": 7, "kind": "limit", "terms": ["repeated start condition setup time", "600"], "optional": true, "note": "Timing row (tSU;STA), excluded by design."}
+{"id": "L17", "page": 7, "kind": "limit", "terms": ["stop condition setup time", "600"], "optional": true, "note": "Timing row (tSU;STO), excluded by design."}
+{"id": "L18", "page": 7, "kind": "limit", "terms": ["data hold time", "0"], "optional": true, "note": "Timing row (tHD;DAT), excluded by design."}
+{"id": "L19", "page": 7, "kind": "limit", "terms": ["data valid time", "0.9"], "optional": true, "note": "Timing row (tVD;DAT), excluded by design."}
+{"id": "L20", "page": 7, "kind": "limit", "terms": ["data setup time", "100"], "optional": true, "note": "Timing row (tSU;DAT), excluded by design."}
+{"id": "L21", "page": 7, "kind": "limit", "terms": ["scl clock low period", "1300"], "optional": true, "note": "Timing row (tLOW), excluded by design."}
+{"id": "L22", "page": 7, "kind": "limit", "terms": ["scl clock high period", "600"], "optional": true, "note": "Timing row (tHIGH), excluded by design."}
+{"id": "L23", "page": 7, "kind": "limit", "terms": ["data fall time", "300"], "optional": true, "note": "Timing row (tF SDA), excluded by design."}
+{"id": "L24", "page": 7, "kind": "limit", "terms": ["clock fall and rise time", "300"], "optional": true, "note": "Timing row (tF, tR SCL), excluded by design."}
+{"id": "L25", "page": 7, "kind": "limit", "terms": ["rise time for scl", "1000"], "optional": true, "note": "Timing row (tR), excluded by design."}
+{"id": "L26", "page": 7, "kind": "limit", "terms": ["serial bus timeout", "20", "40"], "optional": true, "note": "Timing row (bus timeout), excluded by design."}
+{"id": "O01", "page": 4, "kind": "obligation", "terms": ["over temperature alert", "requires a pullup resistor"], "note": "Pin table: ALERT is open drain and needs a pullup."}
+{"id": "O02", "page": 4, "kind": "obligation", "terms": ["serial data input", "requires a pullup resistor"], "note": "Pin table: SDA needs a pullup."}
+{"id": "O03", "page": 4, "kind": "obligation", "terms": ["connect to gnd, v+, sda, or scl"], "note": "Pin table: ADD0 connection."}
+{"id": "O04", "page": 12, "kind": "obligation", "terms": ["use equation 1"], "optional": true, "note": "Calculation hint (average current with averaging)."}
+{"id": "O05", "page": 14, "kind": "obligation", "terms": ["use equation 1"], "optional": true, "note": "Calculation hint (average current in continuous conversion)."}
+{"id": "O06", "page": 18, "kind": "obligation", "terms": ["only reprogram", "nist traceability"], "note": "Keep the factory unique ID for NIST traceability."}
+{"id": "O07", "page": 18, "kind": "obligation", "terms": ["first unlock the eeprom"], "note": "EEPROM programming: unlock first."}
+{"id": "O08", "page": 18, "kind": "obligation", "terms": ["do not perform any i2c writes"], "note": "EEPROM programming: no writes until programming completes."}
+{"id": "O09", "page": 18, "kind": "obligation", "terms": ["read this flag"], "optional": true, "note": "EEPROM programming: poll the busy flag."}
+{"id": "O10", "page": 18, "kind": "obligation", "terms": ["issue a general-call reset"], "note": "EEPROM programming: reset after programming."}
+{"id": "O11", "page": 18, "kind": "obligation", "terms": ["avoid using the device", "eeprom is unlocked"], "note": "No conversions while the EEPROM is unlocked."}
+{"id": "O12", "page": 20, "kind": "obligation", "terms": ["bus must be controlled by a master"], "optional": true, "note": "Generic I2C bus rule."}
+{"id": "O13", "page": 20, "kind": "obligation", "terms": ["sda pin must remain stable"], "optional": true, "note": "Generic I2C bus rule."}
+{"id": "O14", "page": 20, "kind": "obligation", "terms": ["must not be connected to an i2c bus during active communication"], "note": "Do not hot-connect to an active bus."}
+{"id": "O15", "page": 21, "kind": "obligation", "terms": ["master must first address"], "optional": true, "note": "Generic I2C protocol rule."}
+{"id": "O16", "page": 21, "kind": "obligation", "terms": ["requires a value for the pointer register"], "optional": true, "note": "Protocol rule for writes."}
+{"id": "O17", "page": 21, "kind": "obligation", "terms": ["new value must be written to the pointer register"], "optional": true, "note": "Protocol rule for changing the read register."}
+{"id": "O18", "page": 22, "kind": "obligation", "terms": ["maintain a communication speed of at least 1 khz"], "note": "Avoid the bus timeout."}
+{"id": "O19", "page": 22, "kind": "obligation", "terms": ["obliged to generate an acknowledge"], "optional": true, "note": "Generic I2C protocol rule."}
+{"id": "O20", "page": 22, "kind": "obligation", "terms": ["must pull down the sda line"], "optional": true, "note": "Generic I2C protocol rule."}
+{"id": "O21", "page": 22, "kind": "obligation", "terms": ["must take setup and hold times into account"], "note": "Timing must be respected by the user."}
+{"id": "O22", "page": 30, "kind": "obligation", "terms": ["do not delete or reprogram the eeprom[1] register"], "note": "Register map (EEPROM1): keep the unique ID. Section skipped by the extractor."}
+{"id": "O23", "page": 32, "kind": "obligation", "terms": ["do not delete or", "eeprom[1] register"], "note": "Register map (EEPROM3): keep the unique ID. Section skipped by the extractor."}
+{"id": "O24", "page": 33, "kind": "obligation", "terms": ["customers are responsible"], "optional": true, "note": "Legal note on the application section."}
+{"id": "O25", "page": 33, "kind": "obligation", "terms": ["requires a pullup resistor on the sda"], "note": "Pullups on SDA and ALERT."}
+{"id": "O26", "page": 33, "kind": "obligation", "terms": ["recommended value for the pullup resistors", "5"], "note": "Pullup value 5 kOhm."}
+{"id": "O27", "page": 33, "kind": "obligation", "terms": ["0.1", "bypass capacitor is recommended"], "note": "Bypass capacitor between V+ and GND."}
+{"id": "O28", "page": 33, "kind": "obligation", "terms": ["scl pullup resistor is required"], "note": "SCL pullup if the controller pin is open drain."}
+{"id": "O29", "page": 33, "kind": "obligation", "terms": ["use a ceramic capacitor"], "note": "Capacitor type and temperature rating."}
+{"id": "O30", "page": 33, "kind": "obligation", "terms": ["place the capacitor as close as possible"], "note": "Capacitor placement."}
+{"id": "O31", "page": 34, "kind": "obligation", "terms": ["higher averaging numbers are recommended"], "note": "Noisy environments."}
+{"id": "O32", "page": 34, "kind": "obligation", "terms": ["consider the self-heating effect"], "optional": true, "note": "Advisory."}
+{"id": "O33", "page": 34, "kind": "obligation", "terms": ["use the device one-shot mode"], "note": "Reduce self-heating: one-shot mode."}
+{"id": "O34", "page": 34, "kind": "obligation", "terms": ["use the conversion cycle mode with significant standby time"], "note": "Reduce self-heating: standby time."}
+{"id": "O35", "page": 34, "kind": "obligation", "terms": ["use the minimal acceptable power supply voltage"], "note": "Reduce self-heating: low supply."}
+{"id": "O36", "page": 34, "kind": "obligation", "terms": ["provides minimal thermal resistance to the device"], "note": "Reduce self-heating: PCB layout."}
+{"id": "O37", "page": 34, "kind": "obligation", "terms": ["avoid using small-value pullup resistors"], "note": "Reduce self-heating: pullup size."}
+{"id": "O38", "page": 34, "kind": "obligation", "terms": ["pullup resistors larger than", "2"], "note": "Reduce self-heating: pullups above 2 kOhm."}
+{"id": "O39", "page": 34, "kind": "obligation", "terms": ["ensure that the scl and sda signal levels"], "note": "Signal levels below 10 % or above 90 % of the supply."}
+{"id": "O40", "page": 34, "kind": "obligation", "terms": ["avoid heavy bypass traffic"], "note": "Reduce self-heating: bus traffic."}
+{"id": "O41", "page": 34, "kind": "obligation", "terms": ["use the highest available communication speed"], "note": "Reduce self-heating: bus speed."}
+{"id": "O42", "page": 34, "kind": "obligation", "terms": ["triggering a reset is recommended"], "note": "Synchronized measurements."}
+{"id": "O43", "page": 35, "kind": "obligation", "terms": ["bypass capacitor is required"], "note": "Power-supply bypass capacitor required."}
+{"id": "O44", "page": 35, "kind": "obligation", "terms": ["must be placed as close to the supply and ground pins"], "note": "Bypass capacitor placement."}
+{"id": "O45", "page": 35, "kind": "obligation", "terms": ["recommended value for this supply bypass capacitor", "100"], "note": "Bypass capacitor 100 nF."}
+{"id": "O46", "page": 35, "kind": "obligation", "terms": ["may require additional decoupling capacitors"], "optional": true, "note": "Conditional advice for noisy supplies."}
+{"id": "O47", "page": 35, "kind": "obligation", "terms": ["should be left unsoldered"], "note": "Thermal pad left unsoldered."}
+{"id": "O48", "page": 35, "kind": "obligation", "terms": ["it must be left floating or grounded"], "note": "Soldered thermal pad: floating or grounded."}
+{"id": "O49", "page": 36, "kind": "obligation", "terms": ["do not solder down the thermal pad"], "note": "Rigid PCB: do not solder the pad."}
+{"id": "O50", "page": 36, "kind": "obligation", "terms": ["should be connected to the ground or left floating"], "note": "Soldered pad connection."}
+{"id": "O51", "page": 36, "kind": "obligation", "terms": ["place the power-supply bypass capacitor as close as possible"], "note": "Layout: capacitor placement."}
+{"id": "O52", "page": 36, "kind": "obligation", "terms": ["recommended value of this bypass capacitor", "0.1"], "note": "Layout: capacitor value 0.1 uF."}
+{"id": "O53", "page": 36, "kind": "obligation", "terms": ["maintain some distance between the resistor and the device"], "note": "Pullup resistor as heat source."}
+{"id": "O54", "page": 36, "kind": "obligation", "terms": ["mount the tmp117 on the pcb pad"], "note": "Mounting for minimum thermal resistance."}
+{"id": "O55", "page": 36, "kind": "obligation", "terms": ["recommends not soldering the thermal pad"], "note": "No soldered pad when calibration is not planned."}
+{"id": "O56", "page": 36, "kind": "obligation", "terms": ["reflow oven process is highly recommended"], "note": "Reflow instead of manual soldering."}
+{"id": "O57", "page": 36, "kind": "obligation", "terms": ["use pcb with minimal thickness"], "note": "Solid surface measurement."}
+{"id": "O58", "page": 36, "kind": "obligation", "terms": ["prevent pcb bending"], "note": "Solid surface measurement."}
+{"id": "O59", "page": 36, "kind": "obligation", "terms": ["cover bottom of the pcb with copper plane"], "note": "Solid surface measurement."}
+{"id": "O60", "page": 36, "kind": "obligation", "terms": ["remove bottom solder mask"], "note": "Solid surface measurement."}
+{"id": "O61", "page": 36, "kind": "obligation", "terms": ["use thermal conductive paste"], "note": "Solid surface measurement."}
+{"id": "O62", "page": 36, "kind": "obligation", "terms": ["extend these layers under the sensor"], "note": "Solid surface measurement."}
+{"id": "O63", "page": 36, "kind": "obligation", "terms": ["minimize amount of copper wires"], "note": "Solid surface measurement."}
+{"id": "O64", "page": 36, "kind": "obligation", "terms": ["locate sensor in place with minimal air movement"], "note": "Solid surface measurement."}
+{"id": "O65", "page": 36, "kind": "obligation", "terms": ["cover sensor with thermo isolating foam"], "note": "Solid surface measurement."}
+{"id": "O66", "page": 36, "kind": "obligation", "terms": ["design pcb soldering pads bigger than usual"], "note": "Moving air measurement."}
+{"id": "O67", "page": 36, "kind": "obligation", "terms": ["use a pcb with thicker copper layers"], "note": "Moving air measurement."}
+{"id": "O68", "page": 36, "kind": "obligation", "terms": ["cover both side of unused board space"], "note": "Moving air measurement."}
+{"id": "O69", "page": 36, "kind": "obligation", "terms": ["place pcb vertically along air flow"], "note": "Moving air measurement."}
+{"id": "O70", "page": 36, "kind": "obligation", "terms": ["miniaturize the board"], "note": "Still air measurement."}
+{"id": "O71", "page": 36, "kind": "obligation", "terms": ["place two copper planes of equal size"], "note": "Still air measurement."}
+{"id": "O72", "page": 36, "kind": "obligation", "terms": ["remove the top solder mask"], "note": "Still air measurement."}
+{"id": "O73", "page": 36, "kind": "obligation", "terms": ["cover any exposed copper with solder paste"], "note": "Still air measurement."}
+{"id": "O74", "page": 36, "kind": "obligation", "terms": ["thermal isolation is required"], "note": "Still air measurement."}
+{"id": "O75", "page": 36, "kind": "obligation", "terms": ["avoid running the copper plane underneath"], "note": "Still air measurement."}
+{"id": "O76", "page": 37, "kind": "obligation", "terms": ["maximize the air gap"], "note": "Still air measurement."}
+{"id": "O77", "page": 37, "kind": "obligation", "terms": ["create a pcb cutout"], "note": "Still air measurement."}
+{"id": "O78", "page": 37, "kind": "obligation", "terms": ["leave a narrow channel"], "note": "Still air measurement."}
+{"id": "O79", "page": 37, "kind": "obligation", "terms": ["route all signals on the bottom side"], "note": "Still air measurement."}
+{"id": "O80", "page": 37, "kind": "obligation", "terms": ["place the board vertically"], "note": "Still air measurement."}
+{"id": "O81", "page": 39, "kind": "obligation", "terms": ["recommends that all integrated circuits be handled"], "optional": true, "note": "ESD caution boilerplate."}
+{"id": "O82", "page": 46, "kind": "obligation", "terms": ["refer to the shipping label"], "optional": true, "note": "Packaging note."}
+{"id": "O83", "page": 50, "kind": "obligation", "terms": ["you are solely responsible"], "optional": true, "note": "Legal notice."}
