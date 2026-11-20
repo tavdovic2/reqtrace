@@ -354,6 +354,31 @@ def is_obligation(text: str) -> bool:
     return has_obligation_wording(text) or is_imperative(text)
 
 
+# "X is recommended", "X are recommended", "it is recommended to X", "X should be used".
+_PASSIVE_RECOMMENDATION = re.compile(
+    r"\b(?:is|are)\s+(?:\w+ly\s+|also\s+)?recommended\b(?!\s+operating)"
+    r"|\bshould\s+(?:not\s+)?(?:\w+ly\s+)?be\s+(?!noted\b)"
+    r"(?:\w+ed|\w+en|kept|left|set|put|held|built|made|done|run|read|cut|met|laid|tied|sent)\b",
+    re.IGNORECASE,
+)
+
+
+def text_sentences(text: str) -> list[str]:
+    """The sentences of a chunk's text; table rows and list markers are left out."""
+    sentences = []
+    for line in text.splitlines():
+        line = _LIST_MARKER.sub("", line).strip()
+        if line and not line.startswith("|"):
+            sentences.extend(s.strip() for s in _SENTENCE.split(line) if s.strip())
+    return sentences
+
+
+def is_passive_recommendation(sentence: str) -> bool:
+    """True for recommendations in the passive: "A 0.1-µF capacitor is recommended",
+    "it is recommended to ...", "pullup resistors should be used"."""
+    return bool(_PASSIVE_RECOMMENDATION.search(sentence)) and not _LEAD_IN.search(sentence)
+
+
 _UNIT_TYPES = (
     (re.compile(r"(?:°\s?[CF]\b|\bK\b)"), "environmental"),
     (re.compile(r"\b(?:[mµunkM]?(?:V|A|W|F)|[kM]?(?:Ω|Ohm))\b"), "electrical"),

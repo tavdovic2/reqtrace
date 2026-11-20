@@ -677,3 +677,14 @@ def test_ratings_row_with_a_garbled_multi_line_cell_is_read_as_a_limit(
     assert [(r.kind, r.quote) for r in rows] == [
         ("limit", "Voltage at SCL, SDA and\nALERT\n-0.3 6 V")
     ]
+
+
+def test_passive_recommendation_is_taken_by_rule_when_the_model_misses_it(
+    client: TestClient, fake_llm: FakeLLM, tmp_path: Path
+) -> None:
+    recommendation = "In noisy systems, higher averaging numbers are recommended."
+    pdf = make_pdf(tmp_path / "noise.pdf", [["8 Application", "Noise is low.", recommendation]])
+    table = extract(client, fake_llm, pdf)
+    assert [(r["kind"], r["quote"]) for r in table["requirements"]] == [
+        ("obligation", recommendation)
+    ]

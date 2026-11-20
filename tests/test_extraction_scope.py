@@ -6,6 +6,7 @@ from app.extraction_scope import (
     classify,
     invents_obligation,
     is_imperative,
+    is_passive_recommendation,
     is_process_instruction,
     non_requirement_table,
     skipped_section,
@@ -351,3 +352,22 @@ def test_instructions_without_a_comma_or_outside_the_verb_list(text: str) -> Non
 def test_descriptions_stay_out_with_the_lexical_check(text: str) -> None:
     assert not is_imperative(text)
     assert classify(text, "7 Detailed Description") is None
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("A 0.1-µF bypass capacitor is recommended between V+ and GND.", True),
+        ("Higher averaging numbers are recommended in noisy systems.", True),
+        ("It is strongly recommended to solder the thermal pad.", True),
+        ("Pullup resistors should be used on long buses.", True),
+        ("The ADD0 pin should not be left floating.", True),
+        ("It should be noted that the result is in two's complement.", False),
+        ("Operation beyond the Recommended Operating Conditions is not implied.", False),
+        ("The result should be 8000h after reset.", False),
+    ],
+)
+def test_passive_recommendations(text: str, expected: bool) -> None:
+    assert is_passive_recommendation(text) is expected
+    if expected:
+        assert classify(text, "8 Application") == Kind.OBLIGATION

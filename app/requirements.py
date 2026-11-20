@@ -4,7 +4,9 @@
    description, register maps, legal notices, ...) and tables of known non-requirement
    shapes are skipped before any model call. The rest is grouped into calls of
    consecutive chunks from the same top-level section.
-2. **Ask.** The model proposes quotes (and optionally a paraphrase) as JSON.
+2. **Ask.** The model proposes quotes (and optionally a paraphrase) as JSON. Passive
+   recommendations ("X is recommended") are also taken by rule, so they do not depend
+   on the model proposing them.
 3. **Verify.** Each quote is located on one of the group's pages; the stored quote is
    the exact page span. Its kind is decided by deterministic rules (see
    `app.extraction_scope`): an obligation, a limit, or a description that is dropped.
@@ -31,10 +33,12 @@ from app.extraction_scope import (
     classify,
     invents_obligation,
     is_limit_section,
+    is_passive_recommendation,
     is_process_instruction,
     limit_rows,
     non_requirement_table,
     skipped_section,
+    text_sentences,
     type_from_unit,
 )
 from app.llm import LLMOutputError, LLMUnavailableError
@@ -582,7 +586,35 @@ def extract_candidates(
                 outcome.accepted.append(verdict)
         if on_progress:
             on_progress(done)
+    outcome.accepted.extend(rule_candidates(services, plan, page_text, outcome.accepted))
     return outcome
+
+
+def rule_candidates(
+    services: Services,
+    plan: Plan,
+    page_text: Callable[[int], str],
+    accepted: list[Candidate],
+) -> list[Candidate]:
+    """Passive recommendations ("X is recommended", "X should be used") found by rule in
+    the text sent to the model, so they do not depend on the model proposing them.
+
+    They pass the same gates as the model's quotes. A sentence the model already
+    proposed is not added again; its row keeps the model's type.
+    """
+    found: list[Candidate] = []
+    for group in plan.groups:
+        for chunk in group.chunks:
+            for sentence in text_sentences(chunk.text):
+                if not is_passive_recommendation(sentence):
+                    continue
+                item = ExtractedItem(quote=sentence, type=type_from_unit(sentence))
+                verdict, _removed = judge(item, group, page_text, services)
+                if isinstance(verdict, Candidate) and not any(
+                    _same_quote(verdict, other) for other in [*accepted, *found]
+                ):
+                    found.append(verdict)
+    return found
 
 
 def start_extraction(services: Services, doc_id: int) -> None:
