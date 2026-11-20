@@ -309,3 +309,45 @@ def test_timing_rows_are_never_limits() -> None:
 )
 def test_lead_in_sentences_are_not_requirements(text: str) -> None:
     assert classify(text, "Task 2") is None
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # After a purpose phrase without a comma.
+        "To minimize leakage to surrounding air locate the sensor where the air is still.",
+        "For best accuracy place the sensor close to the heat source.",
+        "To support traceability do not delete the EEPROM1 register.",
+        # Verbs outside the verb list, recognised by their form and what follows them.
+        "Miniaturize the board to reduce thermal mass.",
+        "If the board has unused internal layers, extend these layers under the sensor.",
+        "Design PCB soldering pads bigger than usual.",
+        "Only reprogram the general-purpose locations if traceability is not needed.",
+        "After programming the data, issue a general-call reset command.",
+        "To avoid the timeout, maintain a clock of at least 1 kHz.",
+    ],
+)
+def test_instructions_without_a_comma_or_outside_the_verb_list(text: str) -> None:
+    assert is_imperative(text)
+    assert classify(text, "10 Layout") == Kind.OBLIGATION
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "When a filter matches nothing the empty state says so.",
+        "To support traceability the device stores a unique ID.",
+        "For a write operation the controller sends the address byte.",
+        "Like the TS-100, the device uses a two-wire interface.",
+        "Given the low supply current, self-heating is negligible.",
+        "Only the TS-100 supports this mode.",
+        "Reading the result register clears the flag.",
+        "Typical PCB layouts use two layers.",
+        "Uses the same pinout as the TS-100.",
+        "Parameter MIN MAX UNIT",
+        "This register is a 16-bit, read-only register that stores the result.",
+    ],
+)
+def test_descriptions_stay_out_with_the_lexical_check(text: str) -> None:
+    assert not is_imperative(text)
+    assert classify(text, "7 Detailed Description") is None

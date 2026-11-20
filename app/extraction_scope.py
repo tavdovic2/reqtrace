@@ -87,6 +87,50 @@ IMPERATIVE_VERBS = frozenset(
     wire wrap write read review complete finish prepare study watch
     """.split()
 )
+# Words that open a clause but are never the verb of an instruction: articles,
+# pronouns, prepositions, conjunctions, auxiliaries and sentence adverbs. ("Do" is an
+# auxiliary too, but "Do not ..." is an instruction; the verb list is checked first.)
+_CLOSED_CLASS = frozenset(
+    """
+    a an the this that these those its their his her our your my it they we you he she
+    there here each every all any both either neither no none some such many much most
+    more less few several other another one two three half twice once
+    about above across after against along among around as at before behind below
+    beneath beside besides between beyond by despite down during except for from in
+    inside into like unlike near of off on onto out outside over past per since through
+    throughout till to toward towards under underneath until up upon via with within
+    without plus minus versus than given due
+    and or but nor so yet because although though while whereas if unless when whenever
+    where wherever whether which who whom whose what how why
+    is are was were be been being does did has have had can could will would shall
+    should may might must
+    also only then thus therefore however hence moreover furthermore otherwise instead
+    still even just again now first second third next last finally further
+    """.split()
+)
+# Words that point elsewhere rather than instruct ("See Figure 3", "Note the ...").
+_REFERENCE_WORDS = frozenset({"see", "refer", "note", "figure", "table", "example", "equation"})
+# Adverbs that may stand before the verb of an instruction: "Only reprogram ...",
+# "First unlock ...", "Please send ...".
+_LEADING_ADVERBS = frozenset({"please", "always", "only", "also", "first", "then", "just"})
+# What usually follows the verb of an instruction: a determiner or a pronoun.
+_OBJECT_START = frozenset(
+    """
+    the a an this that these those its their your our each every all any both no some
+    one two it them
+    """.split()
+)
+# Word endings that are not a base-form verb: -ing, -ly, -ed and a plural or third-person
+# -s ("-ss" and "-us" are kept: "address", "focus").
+_NOT_BASE_FORM = re.compile(r"(?:ing|ly|ed|(?<![su])s)$")
+_ADJECTIVE_ENDING = re.compile(r"(?:al|ic|ive|ous|ful|less|able|ible|ary|ory)$")
+# A purpose or benefit phrase that can come before an instruction without a comma: "To
+# minimize leakage locate the sensor ...", "For best accuracy place ...".
+_PURPOSE_INTRO = re.compile(r"^(?:to|for|in order to)\s", re.IGNORECASE)
+_MAX_INTRO_WORDS = 15
+# A verb-like word joined by a hyphen is part of a compound: "read-only register",
+# "power-up time", "start-up".
+_COMPOUND_START = re.compile(r"^\W*(?:(?:please|always|only|also|first|then|just)\s+)?\w+-\w", re.I)
 # Instructions about how the work is done (testing, version control, submission).
 PROCESS_VERBS = frozenset({"test", "commit", "push", "submit", "upload"})
 # A finite verb right after the first word means it was a subject, not an instruction:
@@ -186,22 +230,82 @@ def non_requirement_table(chunk: ChunkPayload) -> str | None:
     return None
 
 
-def _instruction_starts(sentence: str) -> list[str]:
-    """Where an instruction could start in a sentence: at its beginning, and after a
-    short introductory phrase that ends with a comma."""
+def _instruction_starts(sentence: str) -> list[tuple[str, bool]]:
+    """Where an instruction could start in a sentence, and whether only a verb from
+    IMPERATIVE_VERBS counts there.
+
+    At the beginning; after a short introductory phrase that ends with a comma; and
+    after a purpose phrase without a comma ("To minimize leakage locate the sensor ...").
+    Without the comma the boundary is only a guess, so it must be a known verb, written
+    in lower case and not preceded by a determiner or preposition ("for the power ...").
+    """
     sentence = _LIST_MARKER.sub("", sentence).strip()
-    starts = [sentence]
+    starts = [(sentence, False)]
     match = _LEADING_PHRASE.match(sentence)
-    if match and len(match.group(1).split()) <= 15:
-        starts.append(match.group(2))
+    if match and len(match.group(1).split()) <= _MAX_INTRO_WORDS:
+        starts.append((match.group(2), False))
+    if _PURPOSE_INTRO.match(sentence):
+        words = list(_WORD.finditer(sentence))
+        for index in range(2, min(len(words), _MAX_INTRO_WORDS + 1)):
+            word = words[index]
+            if "," in sentence[: word.start()]:
+                break
+            if (
+                word.group() in IMPERATIVE_VERBS
+                and words[index - 1].group().lower() not in _CLOSED_CLASS
+            ):
+                starts.append((sentence[word.start() :], True))
+                break
     return starts
+
+
+def _verb_at_start(words: list[str], known_only: bool, sentence_end: bool) -> str | None:
+    """The verb of an instruction that starts with `words`, or None.
+
+    A verb from IMPERATIVE_VERBS always counts. Any other word counts when it has the
+    form of a base-form verb and is followed by what usually follows one: a determiner
+    or pronoun ("Miniaturize the board", "Extend these layers"), or, in a full sentence,
+    a part name in capitals ("Design PCB pads ... ."), unless it looks like an adjective
+    ("Thermal PCB"). A table header ("Parameter MIN MAX UNIT") is not a sentence.
+    """
+    index = 0
+    while index < len(words) - 1 and words[index].lower() in _LEADING_ADVERBS:
+        index += 1
+    word = words[index]
+    lower = word.lower()
+    if len(word) > 1 and word.isupper():
+        return None  # a signal name such as STOP or SCL
+    if lower in IMPERATIVE_VERBS:
+        return lower
+    if (
+        known_only
+        # An ordinary word: lower case or capitalised, not a symbol such as "tHD".
+        or not (word.islower() or (word[:1].isupper() and word[1:].islower()))
+        or len(lower) < 3
+        or lower in _CLOSED_CLASS
+        or lower in _REFERENCE_WORDS
+        or _NOT_BASE_FORM.search(lower)
+    ):
+        return None
+    following = words[index + 1] if index + 1 < len(words) else ""
+    if following.lower() in _OBJECT_START:
+        return lower
+    if (
+        sentence_end
+        and len(following) > 1
+        and following.isupper()
+        and not _ADJECTIVE_ENDING.search(lower)
+    ):
+        return lower
+    return None
 
 
 def instruction_verb(text: str) -> str | None:
     """The verb an instruction in `text` starts with, or None if there is no instruction.
 
-    A clause counts when its first word is an instruction verb that is not a signal
-    name in capitals and is not followed by a finite verb (then it was a subject).
+    A clause counts when it starts with an instruction verb (see _verb_at_start) that
+    is not followed by a finite verb, which would make it a subject ("Power consumption
+    is ...", "the empty state says so").
     """
     for sentence in _SENTENCE.split(text.strip()):
         # A table cell such as "Load capacitance up to 400 pF" starts with a verb-like
@@ -209,19 +313,18 @@ def instruction_verb(text: str) -> str | None:
         # the text carries numbers.
         if _NUMBER.search(sentence) and not sentence.rstrip().endswith((".", "!", "?")):
             continue
-        for start in _instruction_starts(sentence):
+        for start, known_only in _instruction_starts(sentence):
             words = _WORD.findall(start)
             if not words:
                 continue
-            first = words[0]
-            if first.lower() == "please" and len(words) > 1:
-                first = words[1]
+            sentence_end = start.rstrip().endswith((".", "!", "?"))
+            verb = _verb_at_start(words, known_only, sentence_end)
             if (
-                first.lower() in IMPERATIVE_VERBS
-                and not (len(first) > 1 and first.isupper())
+                verb is not None
                 and not _FINITE_AFTER.match(start)
+                and not _COMPOUND_START.match(start)
             ):
-                return first.lower()
+                return verb
     return None
 
 
