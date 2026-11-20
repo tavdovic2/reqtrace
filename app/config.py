@@ -6,7 +6,11 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.extraction_scope import DEFAULT_SKIP_SECTIONS
+from app.extraction_scope import (
+    DEFAULT_SCREEN_SECTIONS,
+    DEFAULT_SCREEN_TOP_SECTIONS,
+    DEFAULT_SKIP_SECTIONS,
+)
 
 
 class Settings(BaseSettings):
@@ -57,7 +61,13 @@ class Settings(BaseSettings):
     quote_match_threshold: float = Field(default=90.0, ge=0, le=100)
     quote_min_chars: int = 15
     requirement_support_threshold: float = Field(default=0.75, ge=0, le=1)
+    # Section rules: regular expressions matched against whole headings (see
+    # app/extraction_scope.py). Skipped sections are not read; of screened sections only
+    # the sentences with obligation wording go to the model; "top" rules apply only to
+    # the first heading of a section path.
     extraction_skip_sections: list[str] = list(DEFAULT_SKIP_SECTIONS)
+    extraction_screen_sections: list[str] = list(DEFAULT_SCREEN_SECTIONS)
+    extraction_screen_top_sections: list[str] = list(DEFAULT_SCREEN_TOP_SECTIONS)
     extraction_paraphrase: bool = False
     extraction_group_chars: int = Field(default=3000, ge=500)
     extraction_concurrency: int = Field(default=1, ge=1, le=4)

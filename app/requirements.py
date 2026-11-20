@@ -1,9 +1,12 @@
 """Requirement extraction: plan, ask the LLM, verify against the PDF, store.
 
-1. **Plan.** Chunks in sections that cannot hold obligations or limits (features,
-   description, register maps, legal notices, ...) and tables of known non-requirement
-   shapes are skipped before any model call. The rest is grouped into calls of
-   consecutive chunks from the same top-level section.
+1. **Plan.** Each section is read in full, screened or skipped by its heading (see
+   `app.extraction_scope.SectionRules`). Skipped sections (legal notices, packaging,
+   revision history, ...) and tables of known non-requirement shapes are dropped before
+   any model call. Of a screened section (features, description, register maps, ...)
+   only the sentences with obligation wording or an instruction are kept. Chunks are
+   grouped into calls: consecutive chunks of one top-level section, and screened
+   sentences on their own.
 2. **Ask.** The model proposes quotes (and optionally a paraphrase) as JSON. Passive
    recommendations ("X is recommended") are also taken by rule, so they do not depend
    on the model proposing them.
@@ -19,17 +22,21 @@ import re
 import time
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
 from sqlalchemy import delete, select
 
+from app.config import Settings
 from app.db import Document, DocumentStatus, ExtractionStatus, Requirement, session_scope, utcnow
 from app.documents import file_path
 from app.errors import ConflictError, NotFoundError, ServiceUnavailableError
 from app.extraction_scope import (
+    Kind,
+    Scope,
+    SectionRules,
     classify,
     invents_obligation,
     is_limit_section,
@@ -37,7 +44,7 @@ from app.extraction_scope import (
     is_process_instruction,
     limit_rows,
     non_requirement_table,
-    skipped_section,
+    screened_text,
     text_sentences,
     type_from_unit,
 )
@@ -120,6 +127,30 @@ def system_prompt(paraphrase: bool) -> str:
     )
 
 
+_SCREEN_PROMPT_HEAD = """You get numbered sentences from the descriptive sections of a \
+datasheet, a specification or an assignment. Each was picked because it contains words such \
+as must, should, required, do not or avoid, or starts with a verb, but most of them only \
+describe how the product behaves.
+
+Return the numbers of the sentences that are obligations: the reader (designer, programmer, \
+user) is told to do or not to do something. A sentence that says what the device does, needs \
+or never does is not an obligation. An empty list is the normal answer.
+
+For each obligation return:
+- "sentence": its number."""
+
+
+def screen_prompt() -> str:
+    """Instructions for screened sentences: the model returns sentence numbers, not quotes,
+    which keeps the generated text short."""
+    return (
+        _SCREEN_PROMPT_HEAD
+        + _PROMPT_TYPE
+        + "\n\nOutput format (placeholders, not content):\n"
+        + '{"obligations": [{"sentence": <number>, "type": "<one type from the list>"}]}'
+    )
+
+
 _BROKEN_NUMBER = re.compile(r"\d\s*:\s*\d")
 # What may separate two parts of one sentence: spaces, commas, colons and dashes. A semicolon
 # usually separates list items, i.e. separate obligations, so it does not join parts.
@@ -153,6 +184,15 @@ class ExtractionResultWithParaphrase(BaseModel):
     requirements: list[ExtractedItemWithParaphrase] = Field(default_factory=list)
 
 
+class ScreenedItem(BaseModel):
+    sentence: int
+    type: RequirementType
+
+
+class ScreenedResult(BaseModel):
+    obligations: list[ScreenedItem] = Field(default_factory=list)
+
+
 class Rejection(StrEnum):
     QUOTE_NOT_FOUND = "quote_not_found"
     NOT_REQUIREMENT = "not_requirement"
@@ -171,9 +211,11 @@ class Candidate:
 
 @dataclass(frozen=True)
 class Group:
-    """Consecutive in-scope chunks of one top-level section, sent in one model call."""
+    """Chunks sent in one model call: consecutive chunks of one top-level section, or,
+    when `screened`, the kept sentences of screened sections."""
 
     chunks: list[ChunkPayload]
+    screened: bool = False
 
 
 @dataclass
@@ -183,6 +225,8 @@ class Plan:
     # Ratings and operating-conditions tables: every row with values is a limit by
     # definition, so these rows are read directly, without a model call.
     limit_tables: list[ChunkPayload] = field(default_factory=list)
+    # Sections of which only the sentences with obligation wording were kept.
+    screened: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -196,22 +240,60 @@ def _top_section(chunk: ChunkPayload) -> str:
     return chunk.section.split(" > ")[0]
 
 
-def plan_extraction(chunks: list[ChunkPayload], skip_sections: list[str], group_chars: int) -> Plan:
-    """Skip out-of-scope chunks and group the rest into model calls.
+def section_rules(settings: Settings) -> SectionRules:
+    """The section rules configured in the settings."""
+    return SectionRules(
+        skip=tuple(settings.extraction_skip_sections),
+        screen=tuple(settings.extraction_screen_sections),
+        screen_top=tuple(settings.extraction_screen_top_sections),
+    )
 
-    `skipped` lists every skipped section path and table, for the log and the count
-    shown to the user.
+
+def _grouped(
+    chunks: list[ChunkPayload], group_chars: int, by_section: bool
+) -> list[list[ChunkPayload]]:
+    groups: list[list[ChunkPayload]] = []
+    current: list[ChunkPayload] = []
+    for chunk in chunks:
+        size = sum(len(c.text) for c in current) + len(chunk.text)
+        new_section = by_section and current and _top_section(current[0]) != _top_section(chunk)
+        if current and (new_section or size > group_chars):
+            groups.append(current)
+            current = []
+        current.append(chunk)
+    if current:
+        groups.append(current)
+    return groups
+
+
+def plan_extraction(chunks: list[ChunkPayload], rules: SectionRules, group_chars: int) -> Plan:
+    """Skip, screen or keep each chunk by its section, and group the result into calls.
+
+    `skipped` lists every skipped section path and table, and `screened` every screened
+    section path, for the log and the count shown to the user.
     """
     kept: list[ChunkPayload] = []
+    screened_chunks: list[ChunkPayload] = []
     skipped: list[str] = []
+    screened: list[str] = []
     limit_tables: list[ChunkPayload] = []
     for chunk in chunks:
-        heading = skipped_section(chunk.section, skip_sections)
+        scope, _heading = rules.scope(chunk.section)
         table = non_requirement_table(chunk)
-        if heading is not None:
+        if scope is Scope.SKIP:
             label = f"section '{chunk.section}'"
             if label not in skipped:
                 skipped.append(label)
+        elif scope is Scope.SCREEN and chunk.kind == "table":
+            # Parameter, register and bit-field tables of a descriptive section.
+            skipped.append(f"table in '{chunk.section}' (page {chunk.page})")
+        elif scope is Scope.SCREEN:
+            label = f"section '{chunk.section}'"
+            if label not in screened:
+                screened.append(label)
+            text = screened_text(chunk.text)
+            if text:
+                screened_chunks.append(replace(chunk, text=text))
         elif table is not None:
             skipped.append(f"{table} table in '{chunk.section}' (page {chunk.page})")
         elif chunk.kind == "table" and is_limit_section(chunk.section):
@@ -220,18 +302,14 @@ def plan_extraction(chunks: list[ChunkPayload], skip_sections: list[str], group_
             kept.append(chunk)
     for label in skipped:
         logger.info("Extraction skips %s", label)
+    for label in screened:
+        logger.info("Extraction screens %s", label)
 
-    groups: list[Group] = []
-    current: list[ChunkPayload] = []
-    for chunk in kept:
-        size = sum(len(c.text) for c in current) + len(chunk.text)
-        if current and (_top_section(current[0]) != _top_section(chunk) or size > group_chars):
-            groups.append(Group(current))
-            current = []
-        current.append(chunk)
-    if current:
-        groups.append(Group(current))
-    return Plan(groups, skipped, limit_tables)
+    groups = [Group(g) for g in _grouped(kept, group_chars, by_section=True)]
+    groups += [
+        Group(g, screened=True) for g in _grouped(screened_chunks, group_chars, by_section=False)
+    ]
+    return Plan(groups, skipped, limit_tables, screened)
 
 
 def readable_table(text: str) -> str:
@@ -264,6 +342,25 @@ def build_prompt(group: Group) -> str:
         header = f"Section: {chunk.section}\n" if chunk.section and chunk.section != section else ""
         section = chunk.section
         parts.append(f"{header}Excerpt (page {chunk.page}):\n{readable_table(chunk.text)}")
+    return "\n\n".join(parts)
+
+
+def screened_sentences(group: Group) -> list[str]:
+    """The sentences of a screened group, in the order they are numbered in the prompt."""
+    return [line for chunk in group.chunks for line in chunk.text.splitlines() if line.strip()]
+
+
+def build_screened_prompt(group: Group) -> str:
+    """User prompt for screened sentences: numbered from 1, under section and page."""
+    parts = []
+    number = 0
+    for chunk in group.chunks:
+        lines = []
+        for line in chunk.text.splitlines():
+            if line.strip():
+                number += 1
+                lines.append(f"[{number}] {line.strip()}")
+        parts.append(f"Section: {chunk.section}\nPage {chunk.page}:\n" + "\n".join(lines))
     return "\n\n".join(parts)
 
 
@@ -412,6 +509,8 @@ def judge(
     kind = classify(quote, chunk.section)
     if (
         kind is None
+        # A screened section is descriptive: only obligations are taken from it.
+        or (group.screened and kind is not Kind.OBLIGATION)
         or is_learning_objective(quote, chunk)
         or is_placeholder(item.quote)
         or is_fragment(quote)
@@ -517,14 +616,31 @@ def assign_codes(count: int) -> list[str]:
     return [f"REQ-{n:0{width}d}" for n in range(1, count + 1)]
 
 
-def _ask(services: Services, groups: list[Group]) -> Iterator[tuple[Group, BaseModel]]:
-    """Model replies in group order; with EXTRACTION_CONCURRENCY > 1, calls overlap."""
+ProposedItem = ExtractedItem | ExtractedItemWithParaphrase
+
+
+def _ask(services: Services, groups: list[Group]) -> Iterator[tuple[Group, list[ProposedItem]]]:
+    """Proposed items in group order; with EXTRACTION_CONCURRENCY > 1, calls overlap.
+
+    For a screened group the model names sentence numbers; each becomes an item whose
+    quote is that sentence, so it goes through the same checks as a quoted item.
+    """
     paraphrase = services.settings.extraction_paraphrase
     instructions = system_prompt(paraphrase)
     schema: type[BaseModel] = ExtractionResultWithParaphrase if paraphrase else ExtractionResult
 
-    def call(group: Group) -> tuple[Group, BaseModel]:
-        return group, services.llm.generate_structured(instructions, build_prompt(group), schema)
+    def call(group: Group) -> tuple[Group, list[ProposedItem]]:
+        if not group.screened:
+            result = services.llm.generate_structured(instructions, build_prompt(group), schema)
+            return group, list(result.requirements)  # type: ignore[attr-defined]
+        sentences = screened_sentences(group)
+        screened = services.llm.generate_structured(
+            screen_prompt(), build_screened_prompt(group), ScreenedResult
+        )
+        numbers = dict.fromkeys(
+            (o.sentence, o.type) for o in screened.obligations if 1 <= o.sentence <= len(sentences)
+        )
+        return group, [ExtractedItem(quote=sentences[n - 1], type=t) for n, t in numbers]
 
     workers = services.settings.extraction_concurrency
     if workers == 1:
@@ -576,8 +692,8 @@ def extract_candidates(
         rows, missing = limit_table_rows(chunk, page_text, services)
         outcome.accepted.extend(rows)
         outcome.rejected[Rejection.QUOTE_NOT_FOUND] += missing
-    for done, (group, result) in enumerate(_ask(services, plan.groups), start=1):
-        for item in result.requirements:  # type: ignore[attr-defined]
+    for done, (group, items) in enumerate(_ask(services, plan.groups), start=1):
+        for item in items:
             verdict, removed = judge(item, group, page_text, services)
             outcome.paraphrases_removed += removed
             if isinstance(verdict, Rejection):
@@ -670,7 +786,7 @@ def run_extraction(services: Services, doc_id: int) -> None:
         settings = services.settings
         plan = plan_extraction(
             services.store.document_chunks(doc_id),
-            settings.extraction_skip_sections,
+            section_rules(settings),
             settings.extraction_group_chars,
         )
         _update(services, doc_id, extraction_total_chunks=len(plan.groups))
@@ -687,11 +803,12 @@ def run_extraction(services: Services, doc_id: int) -> None:
         )
         _save(services, doc_id, unique, outcome, len(plan.skipped))
         logger.info(
-            "Document %d: %d saved, rejected %s, %d skipped, %d calls in %.0f s",
+            "Document %d: %d saved, rejected %s, %d skipped, %d screened, %d calls in %.0f s",
             doc_id,
             len(unique),
             dict(outcome.rejected),
             len(plan.skipped),
+            len(plan.screened),
             len(plan.groups),
             time.monotonic() - started,
         )

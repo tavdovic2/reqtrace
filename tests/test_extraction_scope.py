@@ -1,55 +1,134 @@
 import pytest
 
 from app.extraction_scope import (
-    DEFAULT_SKIP_SECTIONS,
     Kind,
+    Scope,
+    SectionRules,
     classify,
+    heading_text,
     invents_obligation,
     is_imperative,
     is_passive_recommendation,
     is_process_instruction,
     non_requirement_table,
-    skipped_section,
+    screened_text,
+    worth_screening,
 )
 from app.vector_store import ChunkPayload
+
+RULES = SectionRules()
+
+# Heading paths in the style of typical datasheet tables of contents, with the scope each
+# gets. SKIP: front and back matter, legal text, packaging (nothing is read). SCREEN:
+# descriptive sections (only sentences with obligation wording go to the model). FULL:
+# everything else.
+TI_STYLE = [
+    ("1 Features", Scope.SCREEN),
+    ("2 Applications", Scope.SCREEN),
+    ("3 Description", Scope.SCREEN),
+    ("3 Description > Device Information (1)", Scope.SCREEN),
+    ("3 Description > Table of Contents", Scope.SKIP),
+    ("4 Revision History", Scope.SKIP),
+    ("4 Revision History > Changes from Revision C (March 2019) to Revision D", Scope.SKIP),
+    ("5 Pin Configuration and Functions", Scope.FULL),
+    ("6 Specifications > 6.1 Absolute Maximum Ratings", Scope.FULL),
+    ("6 Specifications > 6.2 ESD Ratings", Scope.SCREEN),
+    ("6 Specifications > 6.3 Recommended Operating Conditions", Scope.FULL),
+    ("6 Specifications > 6.4 Thermal Information", Scope.SCREEN),
+    ("6 Specifications > 6.5 Electrical Characteristics", Scope.SCREEN),
+    ("6 Specifications > 6.6 Switching Characteristics", Scope.SCREEN),
+    ("6 Specifications > 6.7 Two-Wire Interface Timing", Scope.FULL),
+    ("6 Specifications > 6.8 Timing Diagram", Scope.SCREEN),
+    ("6 Specifications > 6.9 Typical Characteristics (continued)", Scope.SCREEN),
+    ("7 Detailed Description > 7.1 Overview", Scope.SCREEN),
+    ("7 Detailed Description > 7.3 Feature Description > 7.3.1 Power Up", Scope.SCREEN),
+    ("7 Detailed Description > 7.5 Programming > 7.5.1 EEPROM Programming", Scope.SCREEN),
+    ("7 Detailed Description > 7.6 Register Map > 7.6.7 EEPROM1 Register", Scope.SCREEN),
+    ("8 Application and Implementation > 8.1 Application Information", Scope.FULL),
+    ("8 Application and Implementation > 8.2 Typical Application", Scope.FULL),
+    ("9 Power Supply Recommendations", Scope.FULL),
+    ("10 Layout > 10.1 Layout Guidelines", Scope.FULL),
+    ("11 Device and Documentation Support > 11.4 Trademarks", Scope.SKIP),
+    ("11 Device and Documentation Support > 11.5 Electrostatic Discharge Caution", Scope.SKIP),
+    ("12 Mechanical, Packaging, and Orderable Information > PACKAGE OUTLINE", Scope.SKIP),
+    ("12 Mechanical, Packaging, and Orderable Information > IMPORTANT NOTICE", Scope.SKIP),
+]
+ST_STYLE = [
+    ("1 Description", Scope.SCREEN),
+    ("2 Pin description", Scope.FULL),
+    ("3 Functional description > 3.1 Power-on reset", Scope.SCREEN),
+    ("4 Electrical characteristics > 4.1 Absolute maximum ratings", Scope.FULL),
+    ("4 Electrical characteristics > 4.2 Operating conditions", Scope.FULL),
+    ("4 Electrical characteristics > 4.3 DC characteristics", Scope.SCREEN),
+    ("5 Application information", Scope.FULL),
+    ("6 Package information > 6.1 SO8 package information", Scope.SKIP),
+    ("7 Ordering information", Scope.SKIP),
+    ("8 Revision history", Scope.SKIP),
+    ("List of tables", Scope.SKIP),
+]
+MICROCHIP_STYLE = [
+    ("Features", Scope.SCREEN),
+    ("Description", Scope.SCREEN),
+    ("1.0 Electrical Characteristics", Scope.SCREEN),
+    ("1.0 Electrical Characteristics > Absolute Maximum Ratings", Scope.FULL),
+    ("2.0 Typical Performance Curves", Scope.FULL),
+    ("4.0 Device Overview > 4.1 Register Description", Scope.SCREEN),
+    ("5.0 Applications Information > 5.1 Layout Considerations", Scope.FULL),
+    ("6.0 Packaging Information > 6.1 Package Marking Information", Scope.SKIP),
+    ("Appendix A: Revision History", Scope.FULL),
+    ("Product Identification System", Scope.SKIP),
+]
+
+
+@pytest.mark.parametrize(("section", "scope"), TI_STYLE + ST_STYLE + MICROCHIP_STYLE)
+def test_section_scope_on_datasheet_tables_of_contents(section: str, scope: Scope) -> None:
+    assert RULES.scope(section)[0] is scope
 
 
 @pytest.mark.parametrize(
     "section",
     [
-        "1 Features",
-        "3 Description",
-        "Revision History",
-        "7 Detailed Description > 7.3 Feature Description > 7.3.1 Power Up",
-        "7 Detailed Description > 7.6 Register Maps > 7.6.1 Config Register",
-        "6 Specifications > 6.6 Typical Characteristics",
-        "9 Device and Documentation Support > 9.1 Related Documentation",
-        "IMPORTANT NOTICE AND DISCLAIMER",
-        "11 Mechanical, Packaging, and Orderable Information",
+        "7 Detailed Description",
+        "7 Detailed Description > 7.3 Feature Description",
+        "8 Application and Implementation > 8.2 Typical Application",
     ],
 )
-def test_sections_without_obligations_or_limits_are_skipped(section: str) -> None:
-    assert skipped_section(section, DEFAULT_SKIP_SECTIONS) is not None
+def test_description_and_features_never_match_inside_a_longer_heading(section: str) -> None:
+    # The rules for "Description", "Features" and "Applications" are top-level ones;
+    # "Detailed Description" is screened by its own rule, not by matching "description".
+    decided_by = RULES.scope(section)[1]
+    assert decided_by is None or decided_by.endswith("Detailed Description")
+
+
+def test_top_level_rules_apply_only_to_the_first_heading() -> None:
+    assert RULES.scope("3 Description")[0] is Scope.SCREEN
+    assert RULES.scope("8 Application and Implementation > Description")[0] is Scope.FULL
+    assert RULES.scope("Task 2 > Features")[0] is Scope.FULL
+
+
+def test_heading_text_drops_number_continued_and_footnote_marks() -> None:
+    assert heading_text("6.9 Typical Characteristics (continued)") == "typical characteristics"
+    assert heading_text("Device Information (1)") == "device information"
+    assert heading_text("A. Legal Notice:") == "legal notice"
 
 
 @pytest.mark.parametrize(
     "section",
     [
         "6 Specifications > 6.1 Absolute Maximum Ratings",
-        "6 Specifications > 6.3 Recommended Operating Conditions",
         "8 Application and Implementation > 8.4 Layout > 8.4.1 Layout Guidelines",
-        "8 Application and Implementation > 8.3 Power Supply Recommendations",
         "Task 2: Filter chips",
         "",
     ],
 )
-def test_sections_that_can_hold_items_are_processed(section: str) -> None:
-    assert skipped_section(section, DEFAULT_SKIP_SECTIONS) is None
+def test_sections_that_can_hold_items_are_read_in_full(section: str) -> None:
+    assert RULES.scope(section) == (Scope.FULL, None)
 
 
-def test_skip_list_is_configurable() -> None:
-    assert skipped_section("Task 2: Filter chips", ["filter chips"]) == "task 2: filter chips"
-    assert skipped_section("1 Features", []) is None
+def test_section_rules_are_configurable() -> None:
+    rules = SectionRules(skip=("task 2: filter chips",), screen=(), screen_top=())
+    assert rules.scope("Task 2: Filter chips") == (Scope.SKIP, "Task 2: Filter chips")
+    assert SectionRules(skip=(), screen=(), screen_top=()).scope("1 Features")[0] is Scope.FULL
 
 
 def table(header: str) -> ChunkPayload:
@@ -371,3 +450,20 @@ def test_passive_recommendations(text: str, expected: bool) -> None:
     assert is_passive_recommendation(text) is expected
     if expected:
         assert classify(text, "8 Application") == Kind.OBLIGATION
+
+
+def test_screening_keeps_only_sentences_that_could_be_obligations() -> None:
+    text = (
+        "The TS-100 measures temperature with a diode. Wait at least 2 ms after power-up "
+        "before the first read.\n"
+        "- Do not write the configuration register during a conversion.\n"
+        "| Register | Reset |\n"
+        "It reports the result with 16 bits."
+    )
+    assert screened_text(text).splitlines() == [
+        "Wait at least 2 ms after power-up before the first read.",
+        "Do not write the configuration register during a conversion.",
+    ]
+    assert worth_screening("The bus must be controlled by a master device.")
+    assert worth_screening("Avoid conversions while the EEPROM is unlocked.")
+    assert not worth_screening("The device acknowledges each data byte.")
