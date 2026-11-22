@@ -8,17 +8,20 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from openpyxl import load_workbook
+from pydantic import BaseModel
 from sqlalchemy import inspect
 
 from app.db import create_session_factory
 from app.export import COLUMNS, to_csv, to_xlsx
-from app.extraction_scope import DEFAULT_SKIP_SECTIONS
+from app.extraction_scope import SectionRules
 from app.pdf import extract_page_text
 from app.requirements import (
     PLACEHOLDERS,
     Candidate,
     ExtractedItemWithParaphrase,
     ExtractionResultWithParaphrase,
+    ScreenedItem,
+    ScreenedResult,
     assign_codes,
     build_prompt,
     deduplicate,
@@ -69,8 +72,9 @@ def test_out_of_scope_sections_are_skipped_before_any_model_call(
     client: TestClient, fake_llm: FakeLLM, sample_pdf: Path
 ) -> None:
     table = extract(client, fake_llm, sample_pdf, item(REAL_QUOTE))
-    # Page 1 ("General Description") and page 3 ("Ordering Information") are out of scope.
-    assert table["skipped_sections"] == 2
+    # Page 3 ("Ordering Information") is out of scope. Page 1 ("General Description") is
+    # screened, and none of its sentences has obligation wording, so it needs no call.
+    assert table["skipped_sections"] == 1
     assert len(fake_llm.prompts) == 1
     assert "Absolute Maximum Ratings" in fake_llm.prompts[0]
 
@@ -346,11 +350,13 @@ def test_plan_skips_sections_and_tables_and_groups_by_top_section() -> None:
         ),
         chunk("7 Application > 7.3 Power", "Use a 0.1 uF capacitor." * 200, 5, index=6),
     ]
-    plan = plan_extraction(chunks, list(DEFAULT_SKIP_SECTIONS), group_chars=1000)
+    plan = plan_extraction(chunks, SectionRules(), group_chars=1000)
     assert [[c.chunk_index for c in g.chunks] for g in plan.groups] == [[4], [6]]
     assert [c.chunk_index for c in plan.limit_tables] == [2, 3]
-    assert len(plan.skipped) == 3
+    assert len(plan.skipped) == 2
     assert any("troubleshooting" in s for s in plan.skipped)
+    # "High accuracy." has no obligation wording: the section is screened, nothing is sent.
+    assert plan.screened == ["section '1 Features'"]
 
 
 def test_group_prompt_names_every_page_and_has_no_pipes() -> None:
@@ -361,7 +367,7 @@ def test_group_prompt_names_every_page_and_has_no_pipes() -> None:
             chunk("6 Specs > 6.1 Pin Functions", markdown, 2, "table", 0),
             chunk("6 Specs > 6.2 Pins", "Text.", 3, index=1),
         ],
-        [],
+        SectionRules(skip=(), screen=(), screen_top=()),
         group_chars=5000,
     )
     prompt = build_prompt(plan.groups[0])
@@ -657,3 +663,128 @@ def test_testing_and_committing_instructions_get_the_process_type() -> None:
     )
     assert isinstance(tested, Candidate) and tested.type == "process"
     assert isinstance(added, Candidate) and added.type == "functional"
+
+
+def test_screened_section_sends_only_sentences_with_obligation_wording() -> None:
+    chunks = [
+        chunk(
+            "7 Detailed Description > 7.5 Programming",
+            "The device stores a unique ID. Do not write the EEPROM during a conversion.",
+            18,
+            index=0,
+        ),
+        chunk(
+            "7 Detailed Description > 7.6 Register Map",
+            "| Address | Register | Reset |\n| --- | --- | --- |\n| 00h | TEMP | 8000h |",
+            25,
+            "table",
+            1,
+        ),
+        chunk(
+            "10 Layout > 10.1 Layout Guidelines", "Place the device near the source.", 36, index=2
+        ),
+    ]
+    plan = plan_extraction(chunks, SectionRules(), group_chars=3000)
+    assert [(g.screened, [c.text for c in g.chunks]) for g in plan.groups] == [
+        (False, ["Place the device near the source."]),
+        (True, ["Do not write the EEPROM during a conversion."]),
+    ]
+    assert plan.screened == ["section '7 Detailed Description > 7.5 Programming'"]
+    assert any("Register Map" in s for s in plan.skipped)
+
+
+def test_obligation_in_a_descriptive_section_is_extracted_but_its_limits_are_not(
+    client: TestClient, fake_llm: FakeLLM, tmp_path: Path
+) -> None:
+    obligation = "To keep the accuracy, do not place the TH-300 next to power parts."
+    limit_like = "The TH-300 draws at least 5 mA during a conversion."
+    pdf = make_pdf(
+        tmp_path / "described.pdf",
+        [
+            ["3 Description", "The TH-300 is a digital sensor.", obligation, limit_like],
+            ["9 Layout", "Place the TH-300 close to the heat source."],
+        ],
+    )
+
+    def answer(prompt: str) -> BaseModel:
+        # Screened sentences are numbered; the model names both picked sentences.
+        if "[1]" in prompt:
+            return ScreenedResult(
+                obligations=[
+                    ScreenedItem(sentence=1, type="other"),
+                    ScreenedItem(sentence=2, type="electrical"),
+                ]
+            )
+        return ExtractionResultWithParaphrase()
+
+    drawer = client.post("/drawers", json={"name": "Described"}).json()
+    document = upload(client, drawer["id"], pdf)
+    fake_llm.structured_replies.extend([answer] * 5)
+    client.post(f"/documents/{document['id']}/requirements")
+    table = client.get(f"/documents/{document['id']}/requirements").json()
+    assert [r["quote"] for r in table["requirements"]] == [obligation]
+    screened_prompt = next(p for p in fake_llm.prompts if "[1]" in p)
+    assert f"[1] {obligation}" in screened_prompt
+    assert f"[2] {limit_like}" in screened_prompt
+    assert "is a digital sensor" not in screened_prompt
+
+
+def test_passive_recommendation_is_taken_by_rule_when_the_model_misses_it(
+    client: TestClient, fake_llm: FakeLLM, tmp_path: Path
+) -> None:
+    recommendation = "In noisy systems, higher averaging numbers are recommended."
+    pdf = make_pdf(tmp_path / "noise.pdf", [["8 Application", "Noise is low.", recommendation]])
+    table = extract(client, fake_llm, pdf)
+    assert [(r["kind"], r["quote"]) for r in table["requirements"]] == [
+        ("obligation", recommendation)
+    ]
+
+
+def test_ratings_row_with_a_garbled_multi_line_cell_is_read_as_a_limit(
+    services: Services,
+) -> None:
+    from app.requirements import limit_table_rows
+
+    page = "5.1 Absolute Maximum Ratings\nVoltage at SCL, SDA and\nALERT\n-0.3 6 V\n"
+    table_chunk = chunk(
+        "5 Specifications > 5.1 Absolute Maximum Ratings",
+        "| Parameter | MIN | MAX | UNIT |\n| --- | --- | --- | --- |\n"
+        "| Voltage at SCL, ALERT | SDA and -0.3 | 6 | V |",
+        2,
+        "table",
+    )
+    rows, missing = limit_table_rows(table_chunk, lambda _page: page, services)
+    assert missing == 0
+    assert [(r.kind, r.quote) for r in rows] == [
+        ("limit", "Voltage at SCL, SDA and\nALERT\n-0.3 6 V")
+    ]
+
+
+def test_screened_prompt_numbers_sentences_and_ignores_unknown_numbers(
+    services: Services,
+) -> None:
+    from app.requirements import Group, _ask, build_screened_prompt, screened_sentences
+
+    group = Group(
+        [
+            chunk("7 Detailed Description", "Do not write the EEPROM.\nAvoid conversions.", 18),
+            chunk("7.6 Register Map", "Do not delete the ID register.", 30, index=1),
+        ],
+        screened=True,
+    )
+    prompt = build_screened_prompt(group)
+    assert "Page 18:\n[1] Do not write the EEPROM.\n[2] Avoid conversions." in prompt
+    assert "Page 30:\n[3] Do not delete the ID register." in prompt
+    assert screened_sentences(group)[2] == "Do not delete the ID register."
+
+    services.llm.structured_replies.append(  # type: ignore[attr-defined]
+        ScreenedResult(
+            obligations=[
+                ScreenedItem(sentence=3, type="other"),
+                ScreenedItem(sentence=9, type="other"),
+                ScreenedItem(sentence=3, type="other"),
+            ]
+        )
+    )
+    [(_group, items)] = list(_ask(services, [group]))
+    assert [i.quote for i in items] == ["Do not delete the ID register."]

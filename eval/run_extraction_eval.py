@@ -36,6 +36,7 @@ from app.requirements import (
     extract_candidates,
     merge_sentence_parts,
     plan_extraction,
+    section_rules,
 )
 from app.services import Services, build_services
 from app.vector_store import ChunkPayload
@@ -120,9 +121,7 @@ def run_document(services: Services, pdf: Path, cache: bool = False) -> Run:
             chunk_blocks(blocks, settings.chunk_max_chars, settings.chunk_overlap_chars)
         )
     ]
-    plan = plan_extraction(
-        chunks, settings.extraction_skip_sections, settings.extraction_group_chars
-    )
+    plan = plan_extraction(chunks, section_rules(settings), settings.extraction_group_chars)
     pages: dict[int, str] = {}
 
     def page_text(page: int) -> str:
@@ -230,7 +229,8 @@ def document_report(pdf: Path, run: Run, services: Services) -> str:
         f"- Rejected: quote not on page {run.rejected['quote_not_found']}, "
         f"not an obligation or limit {run.rejected['not_requirement']}; paraphrases removed "
         f"{run.paraphrases_removed}",
-        f"- Skipped before any model call: {len(run.plan.skipped)} sections and tables",
+        f"- Skipped before any model call: {len(run.plan.skipped)} sections and tables; "
+        f"screened: {len(run.plan.screened)} sections",
         f"- Chunks sent: {chunks} in {groups} model calls; ratings tables read directly: "
         f"{len(run.plan.limit_tables)}",
         f"- Extraction time: {run.seconds:.0f} s "

@@ -218,6 +218,10 @@ DATASHEET = Fixture(
                 "and RTDs in precision designs. It reports temperature with 16-bit resolution over "
                 "a two-wire interface.",
             ),
+            (
+                "p",
+                "To keep this accuracy, do not place the TS-100 next to power components.",
+            ),
         ],
         [
             ("h2", "4 Revision History"),
@@ -274,6 +278,8 @@ DATASHEET = Fixture(
                 "When the temperature exceeds the high limit, the ALERT pin goes low until the "
                 "temperature falls below the low limit.",
             ),
+            ("p", "The TS-100 never stretches the clock."),
+            ("p", "Wait at least 2 ms after power-up before the first read."),
             ("h2", "6.2 Register Map"),
             (
                 "table",
@@ -303,7 +309,11 @@ DATASHEET = Fixture(
             ("p", "To prevent oxidation, cover any exposed copper with solder mask."),
             ("p", "Do not route high-speed digital traces underneath the device."),
             ("p", "The supply voltage must not drop below 1.8 V during a conversion."),
+            ("p", "For best accuracy solder the exposed pad to a large ground plane."),
+            ("p", "Extend the ground plane under the whole package."),
+            ("p", "Pullup resistors of 5 kOhm should be used on long buses."),
             ("p", "A thin board lets the sensor follow temperature changes faster."),
+            ("p", "For low thermal mass the TS-100 comes in a small package."),
             ("h2", "7.2 Troubleshooting"),
             (
                 "table",
@@ -348,6 +358,16 @@ DATASHEET = Fixture(
         Expected("To prevent oxidation, cover any exposed copper with solder mask.", "other"),
         Expected("Do not route high-speed digital traces underneath the device.", "other"),
         Expected("The supply voltage must not drop below 1.8 V during a conversion.", "electrical"),
+        # In descriptive sections, which are screened rather than read in full.
+        Expected(
+            "To keep this accuracy, do not place the TS-100 next to power components.", "other"
+        ),
+        Expected("Wait at least 2 ms after power-up before the first read.", "performance"),
+        # An instruction after a purpose phrase without a comma, a verb outside the verb
+        # list, and a passive recommendation.
+        Expected("For best accuracy solder the exposed pad to a large ground plane.", "other"),
+        Expected("Extend the ground plane under the whole package.", "other"),
+        Expected("Pullup resistors of 5 kOhm should be used on long buses.", "electrical"),
     ],
     not_requirements=[
         "High-accuracy digital temperature sensor",
@@ -370,6 +390,8 @@ DATASHEET = Fixture(
         "01h CONFIG 0220h Configuration",
         "15:12 REV[3:0] R 0h Indicates the revision number",
         "A thin board lets the sensor follow temperature changes faster.",
+        "For low thermal mass the TS-100 comes in a small package.",
+        "The TS-100 never stretches the clock.",
         "No acknowledge Wrong address Check the ADD0 connection",
         "Result stays at 8000h No conversion yet Wait for the first conversion",
         "TS-100 evaluation module user guide",

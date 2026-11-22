@@ -13,6 +13,7 @@ Two independent checks, because the LLM can fail in two independent ways:
 
 import re
 import unicodedata
+from collections import Counter
 from dataclasses import dataclass
 
 from rapidfuzz import fuzz
@@ -203,6 +204,70 @@ def locate_quote(
     start, end = page.origin[a], page.origin[b - 1] + 1
     end = _extend_to_sentence_end(page_text, end, sentence_extension)
     return QuoteMatch(start=start, end=end, score=score)
+
+
+_ROW_TOKEN = re.compile(r"[^\s,;()]+")
+_SIGNED_VALUE = re.compile(r"[-+]?\d+(?:[.,]\d+)?")
+_FOOTNOTE_MARKER = re.compile(r"\(\d{1,2}\)")
+_LINE = re.compile(r"[^\r\n]+")
+
+
+def _row_tokens(text: str) -> tuple[Counter[str], list[str]]:
+    """The words (as a multiset) and the signed values (in order) of a table row."""
+    words: Counter[str] = Counter()
+    values: list[str] = []
+    for token in _ROW_TOKEN.findall(normalize(_FOOTNOTE_MARKER.sub(" ", text))):
+        if _SIGNED_VALUE.fullmatch(token):
+            values.append(token)
+        else:
+            words[token] += 1
+    return words, values
+
+
+def locate_table_row(row: str, page_text: str, max_lines: int = 4) -> tuple[int, int] | None:
+    """Find a table row on the page when its cells were read in another word order.
+
+    A table parser can read a cell that wraps over two lines in the wrong order
+    ("Voltage at SCL, ALERT SDA and -0.3 6 V" for "Voltage at SCL, SDA and / ALERT /
+    -0.3 6 V"), so the row is not found as a sequence. Here the row matches up to
+    `max_lines` consecutive page lines that contain every word of the row in any order
+    and exactly the row's values, signs included, in the same order and nothing else.
+    A wrong, missing or extra value never matches. Returns the span of those lines.
+    """
+    row_words, row_values = _row_tokens(row)
+    if not row_words or not row_values:
+        return None
+    lines = [(m.start(), m.end()) for m in _LINE.finditer(page_text)]
+    tokens = [_row_tokens(page_text[a:b]) for a, b in lines]
+
+    def extra_words(first: int, last: int) -> int | None:
+        """How many words the lines hold beyond the row's, or None if they do not match."""
+        words: Counter[str] = Counter()
+        values: list[str] = []
+        for line_words, line_values in tokens[first : last + 1]:
+            words.update(line_words)
+            values.extend(line_values)
+        if values != row_values or row_words - words:
+            return None
+        return (words - row_words).total()
+
+    best: tuple[int, int, int] | None = None
+    for first in range(len(lines)):
+        values: list[str] = []
+        for last in range(first, min(len(lines), first + max_lines)):
+            values.extend(tokens[last][1])
+            if values != row_values[: len(values)]:
+                break
+            extra = extra_words(first, last)
+            if extra is not None:
+                # Of all matching line groups, the one with the fewest foreign words:
+                # a neighbouring row can lend a unit ("V") but brings its own label.
+                if best is None or extra < best[0]:
+                    best = (extra, first, last)
+                break
+    if best is None:
+        return None
+    return lines[best[1]][0], lines[best[2]][1]
 
 
 def numbers_in(text: str) -> list[str]:
