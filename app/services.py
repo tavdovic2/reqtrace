@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import Settings
 from app.db import create_session_factory
 from app.embeddings import Embedder, FastEmbedEmbedder
-from app.ingestion import DoclingParser, PdfParser
+from app.ingestion import DoclingParser, ParserOptions, PdfParser
 from app.llm import LLMClient, OllamaClient
 from app.vector_store import VectorStore
 
@@ -53,5 +53,11 @@ def build_services(settings: Settings) -> Services:
             timeout_seconds=settings.llm_timeout_seconds,
             think=settings.llm_think,
         ),
-        parser=DoclingParser(),
+        parser=DoclingParser(
+            ParserOptions(
+                threads=settings.parse_threads,
+                table_mode=settings.parse_table_mode,
+                device=settings.parse_device,
+            ),
+        ),
     )

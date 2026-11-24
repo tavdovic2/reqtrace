@@ -6,6 +6,7 @@ without Docling or any model download.
 """
 
 import logging
+import os
 import re
 import threading
 from collections.abc import Callable
@@ -227,20 +228,71 @@ def unique_chunks(chunks: list[Chunk]) -> list[Chunk]:
     return kept
 
 
+@dataclass(frozen=True)
+class ParserOptions:
+    """How Docling runs. See PARSE_* in app/config.py."""
+
+    threads: int = 0  # 0: one per CPU core
+    table_mode: Literal["accurate", "fast"] = "fast"
+    device: Literal["cpu", "cuda", "auto"] = "cpu"
+
+    @property
+    def thread_count(self) -> int:
+        return self.threads or os.cpu_count() or 4
+
+    def resolved_device(self) -> str:
+        """The device to use: CUDA only when asked for and available, else the CPU."""
+        if self.device == "cpu":
+            return "cpu"
+        try:
+            import torch
+
+            available = torch.cuda.is_available()
+        except Exception:
+            available = False
+        if not available:
+            if self.device == "cuda":
+                logger.warning("PARSE_DEVICE=cuda but CUDA is not available; parsing on the CPU")
+            return "cpu"
+        return "cuda"
+
+
 class DoclingParser:
     """Parses PDFs with Docling. OCR is off: scanned PDFs are reported, not guessed at."""
 
-    def __init__(self) -> None:
+    def __init__(self, options: ParserOptions | None = None, cache_dir: Path | None = None) -> None:
+        self.options = options or ParserOptions()
         self._converter: object | None = None
         self._lock = threading.Lock()
 
     def _get_converter(self) -> object:
         if self._converter is None:
+            from docling.datamodel.accelerator_options import AcceleratorOptions
             from docling.datamodel.base_models import InputFormat
-            from docling.datamodel.pipeline_options import PdfPipelineOptions
+            from docling.datamodel.pipeline_options import (
+                PdfPipelineOptions,
+                TableFormerMode,
+                TableStructureOptions,
+            )
             from docling.document_converter import DocumentConverter, PdfFormatOption
 
-            options = PdfPipelineOptions(do_ocr=False, do_table_structure=True)
+            device = self.options.resolved_device()
+            options = PdfPipelineOptions(
+                do_ocr=False,
+                do_table_structure=True,
+                table_structure_options=TableStructureOptions(
+                    mode=TableFormerMode(self.options.table_mode)
+                ),
+                accelerator_options=AcceleratorOptions(
+                    num_threads=self.options.thread_count, device=device
+                ),
+            )
+            logger.info(
+                "Docling: %d threads, device %s, table mode %s",
+                self.options.thread_count,
+                device,
+                self.options.table_mode,
+            )
             self._converter = DocumentConverter(
                 format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=options)}
             )

@@ -39,6 +39,13 @@ class Settings(BaseSettings):
     embedding_device: Literal["cpu", "cuda"] = "cpu"
     models_cache_dir: Path | None = None
 
+    # Docling parsing. Threads: 0 = one per CPU core. "fast" table mode is quicker but
+    # less exact on complex tables. "cuda" falls back to the CPU when it is not available;
+    # on a 6 GB GPU shared with Ollama keep "cpu" (see README, Performance).
+    parse_threads: int = Field(default=0, ge=0, le=256)
+    parse_table_mode: Literal["accurate", "fast"] = "fast"
+    parse_device: Literal["cpu", "cuda", "auto"] = "cpu"
+
     ollama_base_url: str = "http://localhost:11434"
     llm_model: str = "qwen3:4b"
     llm_num_ctx: int = 8192

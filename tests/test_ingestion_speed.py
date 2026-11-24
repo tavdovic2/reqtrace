@@ -1,5 +1,6 @@
 """Ingestion speed-ups: parse cache, parser options, length-sorted embedding batches."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -7,13 +8,29 @@ import pytest
 from app import documents
 from app.config import Settings
 from app.embeddings import EmbeddedText
+from app.ingestion import ParserOptions
 from app.services import Services
 from app.vector_store import ChunkPayload
 from tests.conftest import HashEmbedder, make_pdf
 
 
+def test_parser_options_resolve_threads_and_fall_back_to_the_cpu(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert ParserOptions(threads=0).thread_count == (os.cpu_count() or 4)
+    assert ParserOptions(threads=6).thread_count == 6
+    assert ParserOptions(device="cpu").resolved_device() == "cpu"
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    assert ParserOptions(device="cuda").resolved_device() == "cpu"
+    assert ParserOptions(device="auto").resolved_device() == "cpu"
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    assert ParserOptions(device="auto").resolved_device() == "cuda"
+
+
 def test_settings_have_safe_defaults() -> None:
     settings = Settings(_env_file=None)
+    assert settings.parse_device == "cpu"
     assert settings.embedding_device == "cpu"
 
 
