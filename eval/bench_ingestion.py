@@ -5,8 +5,12 @@ Each run stores the PDF as a new document and runs the same indexing code as an 
 It uses its own data directory and Qdrant collection, so the application's data is not
 touched. Qdrant must be running (see Quick start).
 
+The parse cache is off unless --cache is given, so every run really parses. Parser and
+embedding settings come from the environment as in the application (PARSE_*, EMBEDDING_*).
+
 Usage:
     python -m eval.bench_ingestion --pdf samples/tmp117.pdf --runs 3
+    python -m eval.bench_ingestion --pdf samples/tmp117.pdf --runs 2 --cache
 """
 
 import argparse
@@ -31,12 +35,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pdf", type=Path, required=True)
     parser.add_argument("--runs", type=int, default=3)
     parser.add_argument("--output", type=Path, default=WORK_DIR / "bench.json")
+    parser.add_argument(
+        "--cache",
+        action="store_true",
+        help="Keep the parse cache on (runs after the first then reuse the parsed PDF)",
+    )
     args = parser.parse_args(argv)
     if not args.pdf.exists():
         print(f"{args.pdf} not found.", file=sys.stderr)
         return 1
 
-    settings = Settings(data_dir=WORK_DIR / "data", qdrant_collection="reqtrace_bench")
+    settings = Settings(
+        data_dir=WORK_DIR / "data", qdrant_collection="reqtrace_bench", parse_cache=args.cache
+    )
     services = build_services(settings)
     started = time.monotonic()
     documents.warm_up(services)

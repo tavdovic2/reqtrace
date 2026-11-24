@@ -8,10 +8,70 @@ import pytest
 from app import documents
 from app.config import Settings
 from app.embeddings import EmbeddedText
-from app.ingestion import ParserOptions
+from app.ingestion import Block, DoclingParser, ParseCache, ParserOptions
 from app.services import Services
 from app.vector_store import ChunkPayload
 from tests.conftest import HashEmbedder, make_pdf
+
+BLOCKS = [Block("heading", "1 Features", 1), Block("text", "Use a 100-nF capacitor.", 2)]
+
+
+class CountingParser(DoclingParser):
+    """DoclingParser with the Docling call replaced, to test the cache around it."""
+
+    def __init__(self, cache_dir: Path | None) -> None:
+        super().__init__(ParserOptions(), cache_dir=cache_dir)
+        self.parsed = 0
+
+    def _parse(self, path: Path, on_page=None) -> list[Block]:  # type: ignore[no-untyped-def]
+        self.parsed += 1
+        return BLOCKS
+
+
+@pytest.fixture
+def pdf(tmp_path: Path) -> Path:
+    return make_pdf(tmp_path / "a.pdf", [["1 Features", "Use a 100-nF capacitor."]])
+
+
+def test_same_pdf_is_parsed_once_and_then_read_from_the_cache(tmp_path: Path, pdf: Path) -> None:
+    parser = CountingParser(tmp_path / "cache")
+    assert parser(pdf) == BLOCKS
+    copy = tmp_path / "copy.pdf"
+    copy.write_bytes(pdf.read_bytes())  # same content, another name (another drawer)
+    assert parser(copy) == BLOCKS
+    assert parser.parsed == 1
+
+
+def test_changed_content_or_settings_miss_the_cache(tmp_path: Path, pdf: Path) -> None:
+    cache_dir = tmp_path / "cache"
+    parser = CountingParser(cache_dir)
+    parser(pdf)
+    other = make_pdf(tmp_path / "b.pdf", [["2 Layout", "Place the sensor close."]])
+    parser(other)
+    assert parser.parsed == 2
+    accurate = ParseCache(cache_dir, ParserOptions(table_mode="accurate").fingerprint())
+    assert accurate.get(accurate.key(pdf)) is None
+
+
+def test_cache_is_safe_to_delete_or_corrupt(tmp_path: Path, pdf: Path) -> None:
+    cache_dir = tmp_path / "cache"
+    parser = CountingParser(cache_dir)
+    parser(pdf)
+    for file in cache_dir.iterdir():
+        file.write_text("{not json", encoding="utf-8")
+    assert parser(pdf) == BLOCKS
+    for file in cache_dir.iterdir():
+        file.unlink()
+    cache_dir.rmdir()
+    assert parser(pdf) == BLOCKS
+    assert parser.parsed == 3
+
+
+def test_without_a_cache_directory_every_call_parses(pdf: Path) -> None:
+    parser = CountingParser(None)
+    parser(pdf)
+    parser(pdf)
+    assert parser.parsed == 2
 
 
 def test_parser_options_resolve_threads_and_fall_back_to_the_cpu(
@@ -32,6 +92,7 @@ def test_settings_have_safe_defaults() -> None:
     settings = Settings(_env_file=None)
     assert settings.parse_device == "cpu"
     assert settings.embedding_device == "cpu"
+    assert settings.parse_cache_dir == settings.data_dir / "cache" / "parsed"
 
 
 class RecordingEmbedder(HashEmbedder):

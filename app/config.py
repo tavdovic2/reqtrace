@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     parse_threads: int = Field(default=0, ge=0, le=256)
     parse_table_mode: Literal["accurate", "fast"] = "fast"
     parse_device: Literal["cpu", "cuda", "auto"] = "cpu"
+    # Reuse the parsed result of a PDF with the same content (cache under DATA_DIR,
+    # safe to delete).
+    parse_cache: bool = True
 
     ollama_base_url: str = "http://localhost:11434"
     llm_model: str = "qwen3:4b"
@@ -87,6 +90,11 @@ class Settings(BaseSettings):
     dedup_threshold: float = Field(default=92.0, ge=0, le=100)
 
     cors_origins: list[str] = ["http://localhost:5173"]
+
+    @cached_property
+    def parse_cache_dir(self) -> Path:
+        """Directory of the parse cache; deleting it only means PDFs are parsed again."""
+        return self.data_dir / "cache" / "parsed"
 
     @cached_property
     def uploads_dir(self) -> Path:

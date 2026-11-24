@@ -59,5 +59,6 @@ def build_services(settings: Settings) -> Services:
                 table_mode=settings.parse_table_mode,
                 device=settings.parse_device,
             ),
+            cache_dir=settings.parse_cache_dir if settings.parse_cache else None,
         ),
     )

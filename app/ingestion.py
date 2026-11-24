@@ -5,12 +5,14 @@ numbers. Chunking is a pure function over those blocks so it can be tested
 without Docling or any model download.
 """
 
+import hashlib
+import json
 import logging
 import os
 import re
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal, Protocol
 
@@ -256,12 +258,63 @@ class ParserOptions:
             return "cpu"
         return "cuda"
 
+    def fingerprint(self) -> str:
+        """What the parsed result depends on (threads and device do not change it)."""
+        from importlib.metadata import version
+
+        return f"docling={version('docling')};tables={self.table_mode};cache=1"
+
+
+class ParseCache:
+    """Parsed blocks of PDFs already seen, keyed by content hash and parser settings.
+
+    One JSON file per PDF under `directory`. A missing, unreadable or outdated file just
+    means the PDF is parsed again, so the directory is safe to delete at any time.
+    """
+
+    def __init__(self, directory: Path, fingerprint: str) -> None:
+        self._directory = directory
+        self._fingerprint = fingerprint
+
+    def key(self, path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            while chunk := handle.read(1 << 20):
+                digest.update(chunk)
+        digest.update(self._fingerprint.encode())
+        return digest.hexdigest()
+
+    def get(self, key: str) -> list[Block] | None:
+        file = self._directory / f"{key}.json"
+        try:
+            data = json.loads(file.read_text(encoding="utf-8"))
+            if data.get("fingerprint") != self._fingerprint:
+                return None
+            return [Block(**block) for block in data["blocks"]]
+        except FileNotFoundError:
+            return None
+        except (OSError, ValueError, TypeError, KeyError):
+            logger.warning("Ignoring unreadable parse cache file %s", file)
+            return None
+
+    def put(self, key: str, blocks: list[Block]) -> None:
+        try:
+            self._directory.mkdir(parents=True, exist_ok=True)
+            file = self._directory / f"{key}.json"
+            staging = file.with_suffix(".tmp")
+            payload = {"fingerprint": self._fingerprint, "blocks": [asdict(b) for b in blocks]}
+            staging.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            staging.replace(file)
+        except OSError:
+            logger.warning("Could not write the parse cache in %s", self._directory)
+
 
 class DoclingParser:
     """Parses PDFs with Docling. OCR is off: scanned PDFs are reported, not guessed at."""
 
     def __init__(self, options: ParserOptions | None = None, cache_dir: Path | None = None) -> None:
         self.options = options or ParserOptions()
+        self._cache = ParseCache(cache_dir, self.options.fingerprint()) if cache_dir else None
         self._converter: object | None = None
         self._lock = threading.Lock()
 
@@ -306,7 +359,21 @@ class DoclingParser:
             self._get_converter().initialize_pipeline(InputFormat.PDF)  # type: ignore[attr-defined]
 
     def __call__(self, path: Path, on_page: PageProgress | None = None) -> list[Block]:
-        """Convert the PDF and return its body content as blocks in reading order."""
+        """The PDF's body content as blocks in reading order, from the cache when the same
+        file was parsed before with the same settings."""
+        if self._cache is None:
+            return self._parse(path, on_page)
+        key = self._cache.key(path)
+        cached = self._cache.get(key)
+        if cached is not None:
+            logger.info("Parse cache hit for %s", path.name)
+            return cached
+        blocks = self._parse(path, on_page)
+        self._cache.put(key, blocks)
+        return blocks
+
+    def _parse(self, path: Path, on_page: PageProgress | None = None) -> list[Block]:
+        """Convert the PDF with Docling."""
         from docling_core.types.doc import (
             ListItem,
             SectionHeaderItem,
