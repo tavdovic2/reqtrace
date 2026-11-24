@@ -2,6 +2,7 @@
 
 import logging
 import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -19,6 +20,14 @@ class SparseVector:
 class EmbeddedText:
     dense: list[float]
     sparse: SparseVector
+
+
+@dataclass
+class EmbedTimings:
+    """Seconds spent in each model since the last reset (for the ingestion timing log)."""
+
+    dense: float = 0.0
+    sparse: float = 0.0
 
 
 class Embedder(Protocol):
@@ -57,6 +66,7 @@ class FastEmbedEmbedder:
         self._dense: object | None = None
         self._sparse: object | None = None
         self._lock = threading.Lock()
+        self.timings = EmbedTimings()
 
     def _models(self) -> tuple[object, object]:
         with self._lock:
@@ -82,8 +92,12 @@ class FastEmbedEmbedder:
     def embed_passages(self, texts: list[str]) -> list[EmbeddedText]:
         """Embed document chunks."""
         dense_model, sparse_model = self._models()
-        dense = dense_model.embed([self._passage_prefix + t for t in texts])  # type: ignore[attr-defined]
-        sparse = sparse_model.embed(texts)  # type: ignore[attr-defined]
+        started = time.monotonic()
+        dense = list(dense_model.embed([self._passage_prefix + t for t in texts]))  # type: ignore[attr-defined]
+        middle = time.monotonic()
+        sparse = list(sparse_model.embed(texts))  # type: ignore[attr-defined]
+        self.timings.dense += middle - started
+        self.timings.sparse += time.monotonic() - middle
         return [
             EmbeddedText(d.tolist(), SparseVector(s.indices.tolist(), s.values.tolist()))
             for d, s in zip(dense, sparse, strict=True)
