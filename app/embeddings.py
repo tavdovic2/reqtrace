@@ -1,6 +1,7 @@
 """Dense and sparse (BM25) embeddings with FastEmbed, on the CPU."""
 
 import logging
+import os
 import threading
 import time
 from dataclasses import dataclass
@@ -56,6 +57,7 @@ class FastEmbedEmbedder:
         passage_prefix: str = "",
         cache_dir: Path | None = None,
         threads: int | None = None,
+        device: str = "cpu",
     ) -> None:
         self._dense_name = dense_model
         self._sparse_name = sparse_model
@@ -63,6 +65,7 @@ class FastEmbedEmbedder:
         self._passage_prefix = passage_prefix
         self._cache_dir = str(cache_dir) if cache_dir else None
         self._threads = threads
+        self._device = device
         self._dense: object | None = None
         self._sparse: object | None = None
         self._lock = threading.Lock()
@@ -77,10 +80,33 @@ class FastEmbedEmbedder:
                     "Loading embedding models %s and %s", self._dense_name, self._sparse_name
                 )
                 self._dense = TextEmbedding(
-                    self._dense_name, cache_dir=self._cache_dir, threads=self._threads
+                    self._dense_name,
+                    cache_dir=self._cache_dir,
+                    # ONNX Runtime's own default uses fewer threads than there are cores;
+                    # all logical cores embedded TMP117 about 15% faster (README, Performance).
+                    threads=self._threads or os.cpu_count(),
+                    **self._device_options(),
                 )
                 self._sparse = SparseTextEmbedding(self._sparse_name, cache_dir=self._cache_dir)
         return self._dense, self._sparse
+
+    def _device_options(self) -> dict[str, object]:
+        """ONNX Runtime providers for the dense model: CUDA when asked for and installed."""
+        if self._device != "cuda":
+            return {}
+        import onnxruntime
+
+        if "CUDAExecutionProvider" not in onnxruntime.get_available_providers():
+            logger.warning(
+                "EMBEDDING_DEVICE=cuda but onnxruntime-gpu is not installed; embedding on the CPU"
+            )
+            return {}
+        # The CUDA and cuDNN libraries come from the torch or nvidia-* wheels; ONNX Runtime
+        # finds them only once they are loaded.
+        preload = getattr(onnxruntime, "preload_dlls", None)
+        if preload is not None:
+            preload()
+        return {"providers": ["CUDAExecutionProvider", "CPUExecutionProvider"]}
 
     @property
     def dense_size(self) -> int:

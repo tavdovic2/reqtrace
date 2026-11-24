@@ -44,6 +44,7 @@ def build_services(settings: Settings) -> Services:
             passage_prefix=settings.dense_passage_prefix,
             cache_dir=settings.models_cache_dir,
             threads=settings.embedding_threads,
+            device=settings.embedding_device,
         ),
         llm=OllamaClient(
             settings.ollama_base_url,

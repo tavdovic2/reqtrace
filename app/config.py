@@ -2,6 +2,7 @@
 
 from functools import cached_property
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,6 +32,11 @@ class Settings(BaseSettings):
     dense_passage_prefix: str = "passage: "
     sparse_model: str = "Qdrant/bm25"
     embedding_threads: int | None = None
+    # Chunks per embedding call at ingestion; chunks are sorted by length first, so a
+    # batch holds texts of similar length and little padding.
+    embedding_batch_size: int = Field(default=16, ge=1, le=512)
+    # "cuda" needs onnxruntime-gpu and falls back to the CPU without it.
+    embedding_device: Literal["cpu", "cuda"] = "cpu"
     models_cache_dir: Path | None = None
 
     ollama_base_url: str = "http://localhost:11434"

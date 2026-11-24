@@ -16,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import Document, DocumentStatus, Drawer, session_scope, utcnow
+from app.embeddings import EmbeddedText
 from app.errors import (
     BadRequestError,
     ConflictError,
@@ -33,7 +34,7 @@ from app.vector_store import ChunkPayload, VectorStoreUnavailableError
 logger = logging.getLogger(__name__)
 
 READ_BLOCK = 1024 * 1024
-EMBED_BATCH = 16
+UPSERT_BATCH = 256
 
 
 def _get_drawer(session: Session, drawer_id: int) -> Drawer:
@@ -333,28 +334,40 @@ def index_document(services: Services, doc_id: int, drawer_id: int, filename: st
     model_timings = getattr(services.embedder, "timings", None)
     if model_timings is not None:
         model_timings.dense = model_timings.sparse = 0.0
+    # Embed in batches of similar length: the model pads every text of a batch to the
+    # longest one, so mixing a short heading with a full table wastes most of the work.
+    # Chunk indexes stay in document order.
+    order = sorted(range(len(chunks)), key=lambda i: len(chunks[i].embedding_text))
+    vectors: list[EmbeddedText | None] = [None] * len(chunks)
     embed_seconds = 0.0
-    for start in range(0, len(chunks), EMBED_BATCH):
-        batch = chunks[start : start + EMBED_BATCH]
+    batch_size = settings.embedding_batch_size
+    for start in range(0, len(order), batch_size):
+        indexes = order[start : start + batch_size]
         step = time.monotonic()
-        vectors = services.embedder.embed_passages([c.embedding_text for c in batch])
+        embedded = services.embedder.embed_passages([chunks[i].embedding_text for i in indexes])
         embed_seconds += time.monotonic() - step
-        payloads = [
-            ChunkPayload(
-                doc_id=doc_id,
-                drawer_id=drawer_id,
-                filename=filename,
-                page=chunk.page,
-                section=chunk.section,
-                kind=chunk.kind,
-                text=chunk.text,
-                chunk_index=start + offset,
-            )
-            for offset, chunk in enumerate(batch)
-        ]
-        step = time.monotonic()
-        services.store.upsert(payloads, vectors)
-        timings.upsert += time.monotonic() - step
+        for index, vector in zip(indexes, embedded, strict=True):
+            vectors[index] = vector
+    payloads = [
+        ChunkPayload(
+            doc_id=doc_id,
+            drawer_id=drawer_id,
+            filename=filename,
+            page=chunk.page,
+            section=chunk.section,
+            kind=chunk.kind,
+            text=chunk.text,
+            chunk_index=index,
+        )
+        for index, chunk in enumerate(chunks)
+    ]
+    step = time.monotonic()
+    for start in range(0, len(chunks), UPSERT_BATCH):
+        services.store.upsert(
+            payloads[start : start + UPSERT_BATCH],
+            [v for v in vectors[start : start + UPSERT_BATCH] if v is not None],
+        )
+    timings.upsert = time.monotonic() - step
     if model_timings is not None:
         timings.dense, timings.sparse = model_timings.dense, model_timings.sparse
     else:
