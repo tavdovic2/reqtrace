@@ -91,16 +91,21 @@ class FastEmbedEmbedder:
         return self._dense, self._sparse
 
     def _device_options(self) -> dict[str, object]:
-        """ONNX Runtime providers for the dense model: CUDA when asked for and installed."""
+        """ONNX Runtime providers for the dense model: CUDA when asked for and installed.
+
+        The CPU is named explicitly: with onnxruntime-gpu installed, ONNX Runtime would
+        otherwise pick CUDA by itself and take GPU memory that Ollama needs.
+        """
+        cpu_only: dict[str, object] = {"providers": ["CPUExecutionProvider"]}
         if self._device != "cuda":
-            return {}
+            return cpu_only
         import onnxruntime
 
         if "CUDAExecutionProvider" not in onnxruntime.get_available_providers():
             logger.warning(
                 "EMBEDDING_DEVICE=cuda but onnxruntime-gpu is not installed; embedding on the CPU"
             )
-            return {}
+            return cpu_only
         # The CUDA and cuDNN libraries come from the torch or nvidia-* wheels; ONNX Runtime
         # finds them only once they are loaded.
         preload = getattr(onnxruntime, "preload_dlls", None)

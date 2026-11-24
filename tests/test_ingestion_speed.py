@@ -132,3 +132,10 @@ def test_embedding_batches_are_sorted_by_length_and_vectors_stay_with_their_chun
     for payload, vector in stored:
         text = f"{payload.section}\n{payload.text}" if payload.kind == "text" else payload.text
         assert vector.dense == reference.embed_query(text).dense
+
+
+def test_embedding_on_the_cpu_names_the_cpu_provider_explicitly() -> None:
+    from app.embeddings import FastEmbedEmbedder
+
+    cpu = FastEmbedEmbedder("dense", "sparse", device="cpu")
+    assert cpu._device_options() == {"providers": ["CPUExecutionProvider"]}
