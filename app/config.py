@@ -32,9 +32,10 @@ class Settings(BaseSettings):
     dense_passage_prefix: str = "passage: "
     sparse_model: str = "Qdrant/bm25"
     embedding_threads: int | None = None
-    # Chunks per embedding call at ingestion; chunks are sorted by length first, so a
-    # batch holds texts of similar length and little padding.
-    embedding_batch_size: int = Field(default=16, ge=1, le=512)
+    # Chunks per embedding call at ingestion. Texts of a batch are padded to the longest
+    # one, so on the CPU one chunk per call is fastest (chunks are also sorted by length);
+    # on a GPU, 16 or more is faster (README, Performance).
+    embedding_batch_size: int = Field(default=1, ge=1, le=512)
     # "cuda" needs onnxruntime-gpu and falls back to the CPU without it.
     embedding_device: Literal["cpu", "cuda"] = "cpu"
     models_cache_dir: Path | None = None
