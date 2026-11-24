@@ -2,6 +2,7 @@
 // and nginx both forward to the FastAPI backend.
 
 import { askBody } from "./devMode";
+import type { ReviewPatch, ReviewStatus } from "./review";
 
 export const API_BASE = "/api";
 
@@ -81,6 +82,8 @@ export interface AskResponse {
 export type RequirementKind = "obligation" | "limit";
 
 export interface Requirement {
+  id: number;
+  /** REQ-### code; stable across re-extraction and never reused. */
   code: string;
   kind: RequirementKind;
   /** Verbatim span of the page text; the primary content of a row. */
@@ -89,8 +92,29 @@ export interface Requirement {
   paraphrase: string;
   type: string;
   page: number;
+  /** Automatic: the quote was found on the cited page. Not a review decision. */
   verified: boolean;
+  /** A person's decision. */
+  status: ReviewStatus;
+  edited_text: string | null;
+  reviewer_note: string | null;
+  /** UTC time of the last status decision; null while proposed. */
+  reviewed_at: string | null;
+  /** A reviewed row that the latest extraction did not find again. */
+  not_found: boolean;
+  /** The text to use: the edited text, else the paraphrase, else the quote. */
+  requirement_text: string;
 }
+
+export interface ReviewCounts {
+  total: number;
+  proposed: number;
+  accepted: number;
+  rejected: number;
+  not_found: number;
+}
+
+export type ExportScope = "accepted" | "all";
 
 export interface RequirementsTable {
   document_id: number;
@@ -104,6 +128,11 @@ export interface RequirementsTable {
   skipped_sections: number;
   paraphrases_removed: number;
   elapsed_seconds: number | null;
+  /** How the latest extraction was merged with the rows already there. */
+  kept: number;
+  added: number;
+  no_longer_found: number;
+  counts: ReviewCounts;
   requirements: Requirement[];
 }
 
@@ -175,8 +204,12 @@ export const api = {
   startExtraction: (docId: number) =>
     request<RequirementsTable>(`/documents/${docId}/requirements`, { method: "POST" }),
   getRequirements: (docId: number) => request<RequirementsTable>(`/documents/${docId}/requirements`),
+  updateRequirement: (id: number, patch: ReviewPatch) =>
+    request<Requirement>(`/requirements/${id}`, json("PATCH", patch)),
+  reviewRequirements: (docId: number, ids: number[], status: ReviewStatus) =>
+    request<RequirementsTable>(`/documents/${docId}/requirements/review`, json("POST", { ids, status })),
 };
 
 export const fileUrl = (docId: number) => `${API_BASE}/documents/${docId}/file`;
-export const exportUrl = (docId: number, format: "csv" | "xlsx") =>
-  `${API_BASE}/documents/${docId}/requirements?format=${format}`;
+export const exportUrl = (docId: number, format: "csv" | "xlsx", scope: ExportScope = "accepted") =>
+  `${API_BASE}/documents/${docId}/requirements?format=${format}&scope=${scope}`;
