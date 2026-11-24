@@ -27,10 +27,10 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
-from sqlalchemy import delete, select
+from sqlalchemy import select
 
 from app.config import Settings
-from app.db import Document, DocumentStatus, ExtractionStatus, Requirement, session_scope, utcnow
+from app.db import Document, DocumentStatus, ExtractionStatus, session_scope, utcnow
 from app.documents import file_path
 from app.errors import ConflictError, NotFoundError, ServiceUnavailableError
 from app.extraction_scope import (
@@ -50,7 +50,14 @@ from app.extraction_scope import (
 )
 from app.llm import LLMOutputError, LLMUnavailableError
 from app.pdf import extract_page_text
-from app.schemas import RequirementOut, RequirementsResponse, RequirementType
+from app.review import (
+    code_number,
+    count_by_status,
+    matches_filter,
+    merge_extraction,
+    requirement_out,
+)
+from app.schemas import RequirementsResponse, RequirementType, StatusFilter
 from app.services import Services
 from app.vector_store import ChunkPayload, VectorStoreUnavailableError
 from app.verification import (
@@ -610,12 +617,6 @@ def deduplicate(candidates: list[Candidate], threshold: float) -> list[Candidate
     return kept
 
 
-def assign_codes(count: int) -> list[str]:
-    """REQ-001, REQ-002, ... (more digits once there are over 999)."""
-    width = max(3, len(str(count)))
-    return [f"REQ-{n:0{width}d}" for n in range(1, count + 1)]
-
-
 ProposedItem = ExtractedItem | ExtractedItemWithParaphrase
 
 
@@ -850,21 +851,10 @@ def _save(
         document = session.get(Document, doc_id)
         if document is None:
             return
-        session.execute(delete(Requirement).where(Requirement.document_id == doc_id))
-        ordered = sorted(candidates, key=lambda c: (c.page, c.start))
-        for code, candidate in zip(assign_codes(len(ordered)), ordered, strict=True):
-            session.add(
-                Requirement(
-                    document_id=doc_id,
-                    code=code,
-                    kind=candidate.kind,
-                    paraphrase=candidate.paraphrase,
-                    type=candidate.type,
-                    page=candidate.page,
-                    quote=candidate.quote,
-                    verified=True,
-                )
-            )
+        merged = merge_extraction(session, document, candidates)
+        document.extraction_kept = merged.kept
+        document.extraction_added = merged.added
+        document.extraction_not_found = merged.not_found
         document.extraction_status = ExtractionStatus.DONE
         document.rejected_quote_not_found = outcome.rejected[Rejection.QUOTE_NOT_FOUND]
         document.rejected_not_requirement = outcome.rejected[Rejection.NOT_REQUIREMENT]
@@ -872,6 +862,13 @@ def _save(
         document.extraction_skipped_sections = skipped
         document.paraphrases_removed = outcome.paraphrases_removed
         document.extraction_finished_at = utcnow()
+    logger.info(
+        "Document %d: %d rows kept, %d added, %d reviewed rows no longer found",
+        doc_id,
+        merged.kept,
+        merged.added,
+        merged.not_found,
+    )
 
 
 def _elapsed(document: Document) -> float | None:
@@ -881,17 +878,19 @@ def _elapsed(document: Document) -> float | None:
     return max(0.0, (end - document.extraction_started_at).total_seconds())
 
 
-def _requirement_out(requirement: Requirement) -> RequirementOut:
-    out = RequirementOut.model_validate(requirement)
-    return out.model_copy(update={"quote": display_quote(out.quote)})
+def get_requirements(
+    services: Services, doc_id: int, status: StatusFilter | None = None
+) -> RequirementsResponse:
+    """The saved requirement table with the extraction status, in page order.
 
-
-def get_requirements(services: Services, doc_id: int) -> RequirementsResponse:
-    """The saved requirement table with the extraction status."""
+    `status` filters the rows (a review status, or "not_found"); the counts per status
+    are always over all rows.
+    """
     with session_scope(services.sessions) as session:
         document = session.get(Document, doc_id)
         if document is None:
             raise NotFoundError(f"Document {doc_id} does not exist.")
+        rows = sorted(document.requirements, key=lambda r: (r.page, code_number(r.code)))
         return RequirementsResponse(
             document_id=doc_id,
             status=document.extraction_status,
@@ -904,5 +903,9 @@ def get_requirements(services: Services, doc_id: int) -> RequirementsResponse:
             skipped_sections=document.extraction_skipped_sections,
             paraphrases_removed=document.paraphrases_removed,
             elapsed_seconds=_elapsed(document),
-            requirements=[_requirement_out(r) for r in document.requirements],
+            kept=document.extraction_kept,
+            added=document.extraction_added,
+            no_longer_found=document.extraction_not_found,
+            counts=count_by_status(rows),
+            requirements=[requirement_out(r) for r in rows if matches_filter(r, status)],
         )

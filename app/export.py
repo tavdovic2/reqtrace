@@ -1,46 +1,102 @@
-"""CSV and Excel export of a requirement table."""
+"""CSV and Excel export of a requirement table.
+
+Two scopes:
+
+- **accepted** (default): only rows a person accepted. "Requirement" is the edited text
+  where there is one, otherwise the original text (the paraphrase, else the quote). The
+  verbatim quote and the page are always included.
+- **all**: every row, with its review status, reviewer note, review time and whether
+  the latest extraction still found it.
+
+"Verified" (the quote was found on its page, automatic) and "Review status" (a person's
+decision) are separate columns and never merged.
+"""
 
 import csv
 import io
+from typing import Literal
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
+from openpyxl.utils import get_column_letter
 
 from app.schemas import RequirementOut
 
-COLUMNS = ["ID", "Kind", "Quote (verbatim)", "Page", "Type", "Paraphrase (model)", "Verified"]
-COLUMN_WIDTHS = [10, 11, 70, 6, 14, 50, 9]
+ExportScope = Literal["accepted", "all"]
+
+COLUMNS = [
+    "ID",
+    "Kind",
+    "Type",
+    "Requirement",
+    "Edited",
+    "Quote (verbatim)",
+    "Page",
+    "Paraphrase (model)",
+    "Verified (quote on page)",
+]
+REVIEW_COLUMNS = ["Review status", "Reviewer note", "Reviewed at (UTC)", "In latest extraction"]
+COLUMN_WIDTHS = [10, 11, 14, 60, 8, 70, 6, 50, 12]
+REVIEW_COLUMN_WIDTHS = [14, 40, 20, 12]
 
 
-def _rows(requirements: list[RequirementOut]) -> list[list[object]]:
-    return [
-        [r.code, r.kind, r.quote, r.page, r.type, r.paraphrase, "yes" if r.verified else "no"]
-        for r in requirements
-    ]
+def _yes(value: bool) -> str:
+    return "yes" if value else "no"
 
 
-def to_csv(requirements: list[RequirementOut]) -> str:
+def select_rows(requirements: list[RequirementOut], scope: ExportScope) -> list[RequirementOut]:
+    """The rows an export contains: accepted ones, or all."""
+    return [r for r in requirements if scope == "all" or r.status == "accepted"]
+
+
+def columns(scope: ExportScope) -> list[str]:
+    return COLUMNS + (REVIEW_COLUMNS if scope == "all" else [])
+
+
+def _rows(requirements: list[RequirementOut], scope: ExportScope) -> list[list[object]]:
+    rows = []
+    for r in select_rows(requirements, scope):
+        row: list[object] = [
+            r.code,
+            r.kind,
+            r.type,
+            r.requirement_text or r.edited_text or r.paraphrase or r.quote,
+            _yes(r.edited_text is not None),
+            r.quote,
+            r.page,
+            r.paraphrase,
+            _yes(r.verified),
+        ]
+        if scope == "all":
+            reviewed = r.reviewed_at.strftime("%Y-%m-%d %H:%M:%S") if r.reviewed_at else ""
+            row += [r.status, r.reviewer_note or "", reviewed, _yes(not r.not_found)]
+        rows.append(row)
+    return rows
+
+
+def to_csv(requirements: list[RequirementOut], scope: ExportScope = "accepted") -> str:
     """CSV with a header row; UTF-8 BOM so Excel detects the encoding."""
     buffer = io.StringIO()
     buffer.write("﻿")
     writer = csv.writer(buffer)
-    writer.writerow(COLUMNS)
-    writer.writerows(_rows(requirements))
+    writer.writerow(columns(scope))
+    writer.writerows(_rows(requirements, scope))
     return buffer.getvalue()
 
 
-def to_xlsx(requirements: list[RequirementOut]) -> bytes:
+def to_xlsx(requirements: list[RequirementOut], scope: ExportScope = "accepted") -> bytes:
     """Excel workbook with a bold, frozen header row and wrapped text."""
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Requirements"
-    sheet.append(COLUMNS)
-    for row in _rows(requirements):
+    sheet.append(columns(scope))
+    for row in _rows(requirements, scope):
         sheet.append(row)
     for cell in sheet[1]:
         cell.font = Font(bold=True)
-    for index, width in enumerate(COLUMN_WIDTHS, start=1):
-        sheet.column_dimensions[chr(ord("A") + index - 1)].width = width
+    widths = COLUMN_WIDTHS + (REVIEW_COLUMN_WIDTHS if scope == "all" else [])
+    for index, width in enumerate(widths, start=1):
+        sheet.column_dimensions[get_column_letter(index)].width = width
     for row in sheet.iter_rows(min_row=2):
         for cell in row:
             cell.alignment = Alignment(wrap_text=True, vertical="top")
