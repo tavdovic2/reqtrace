@@ -201,8 +201,11 @@ def bulk_review(services: Services, doc_id: int, ids: list[int], status: str) ->
         foreign = [i for i in unique if i not in found]
         if foreign:
             listed = ", ".join(str(i) for i in foreign[:20]) + (" …" if len(foreign) > 20 else "")
+            subject = (
+                f"Requirement {listed} does" if len(foreign) == 1 else f"Requirements {listed} do"
+            )
             raise UnprocessableError(
-                f"Requirements {listed} do not belong to document {doc_id}; nothing was changed."
+                f"{subject} not belong to document {doc_id}; nothing was changed."
             )
         for requirement in found.values():
             _set_status(requirement, status)

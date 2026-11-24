@@ -155,7 +155,9 @@ def test_bulk_review_with_a_foreign_id_changes_nothing(
     )
     assert response.status_code == 422
     assert f"{foreign}" in response.json()["detail"]
-    assert "do not belong to document" in response.json()["detail"]
+    assert response.json()["detail"] == (
+        f"Requirement {foreign} does not belong to document {doc}; nothing was changed."
+    )
     table = client.get(f"/documents/{doc}/requirements").json()
     assert table["counts"]["rejected"] == 0
 
