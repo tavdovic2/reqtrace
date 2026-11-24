@@ -26,6 +26,8 @@ vector_store.py  Qdrant collection, upsert, delete, dense / bm25 / hybrid search
 retrieval.py     scope filter (drawer, documents) + search
 qa.py            prompt, structured answer, citation → sources
 requirements.py  planning, grouped model calls, verification, deduplication, storage
+review.py        human review (status, edited text, note, bulk), counts, merging a new
+                 extraction into reviewed rows with stable codes
 extraction_scope.py  what is in scope: skipped, screened and full sections, tables, obligation and limit rules
 verification.py  normalisation with index map, quote location (exact page span),
                  paraphrase support, modality, fragments
@@ -134,7 +136,7 @@ sequenceDiagram
     end
     API->>API: passive recommendations in the sent text, by rule, through the same checks
     API->>API: join parts of one sentence; one row per quote
-    API->>DB: replace requirements (kind, quote, ...), rejection counts, skipped count, finished_at
+    API->>DB: merge with existing rows by page + normalised quote: matched rows keep code and review,<br/>new rows get the next free codes, reviewed rows not found again are kept and flagged,<br/>others removed; kept/added/not-found counts, rejection counts, skipped count, finished_at
     UI->>API: GET /documents/{id}/requirements (polling: elapsed_seconds, done/total; then ?format=csv|xlsx)
 ```
 
