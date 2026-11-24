@@ -22,7 +22,6 @@ from app.requirements import (
     ExtractionResultWithParaphrase,
     ScreenedItem,
     ScreenedResult,
-    assign_codes,
     build_prompt,
     deduplicate,
     merge_sentence_parts,
@@ -92,6 +91,14 @@ def test_obligation_is_saved_with_exact_quote_and_kind(
             "type": "electrical",
             "page": 2,
             "verified": True,
+            # A new row awaits review: verified (automatic) is not a decision.
+            "status": "proposed",
+            "edited_text": None,
+            "reviewer_note": None,
+            "reviewed_at": None,
+            "not_found": False,
+            "requirement_text": REAL_QUOTE,
+            "id": table["requirements"][0]["id"],
         }
     ]
     assert table["requirements"][0]["quote"] in extract_page_text(sample_pdf, 2)
@@ -251,9 +258,11 @@ def test_stored_quotes_are_shown_and_exported_on_one_line(
     quote = table["requirements"][0]["quote"]
     assert quote == long_sentence
     assert "\n" not in quote and "\r" not in quote
-    exported = client.get(f"/documents/{table['document_id']}/requirements?format=csv").text
+    exported = client.get(
+        f"/documents/{table['document_id']}/requirements?format=csv&scope=all"
+    ).text
     rows = list(csv.reader(io.StringIO(exported.lstrip("﻿"))))
-    assert rows[1][2] == long_sentence
+    assert rows[1][COLUMNS.index("Quote (verbatim)")] == long_sentence
 
 
 def test_types_from_a_mixed_fixture_survive_the_pipeline(
@@ -425,13 +434,21 @@ def test_consecutive_table_rows_and_list_items_stay_separate() -> None:
     assert len(merge_sentence_parts(items, lambda _page: list_page)) == 2
 
 
-def test_assign_codes() -> None:
-    assert assign_codes(3) == ["REQ-001", "REQ-002", "REQ-003"]
-    assert assign_codes(1000)[-1] == "REQ-1000"
+def test_codes() -> None:
+    from app.review import code_number, format_code
+
+    assert [format_code(n) for n in (1, 2, 999, 1000)] == [
+        "REQ-001",
+        "REQ-002",
+        "REQ-999",
+        "REQ-1000",
+    ]
+    assert code_number("REQ-1000") == 1000
 
 
 ROWS = [
     RequirementOut(
+        id=1,
         code="REQ-001",
         kind="obligation",
         quote=REAL_QUOTE,
@@ -439,48 +456,52 @@ ROWS = [
         type="electrical",
         page=2,
         verified=True,
+        status="accepted",
     )
 ]
 
 
-def test_csv_export_puts_kind_and_quote_first() -> None:
+def test_csv_export_keeps_verified_and_review_status_apart() -> None:
     content = to_csv(ROWS)
     assert content.startswith("﻿")
     rows = list(csv.reader(io.StringIO(content.lstrip("﻿"))))
     assert rows == [
-        ["ID", "Kind", "Quote (verbatim)", "Page", "Type", "Paraphrase (model)", "Verified"],
+        COLUMNS,
         [
             "REQ-001",
             "obligation",
+            "electrical",
+            'Supply, max 3.6 V; "strict"',
+            "no",
             REAL_QUOTE,
             "2",
-            "electrical",
             'Supply, max 3.6 V; "strict"',
             "yes",
         ],
     ]
+    assert "Verified (quote on page)" in COLUMNS and "Review status" not in COLUMNS
 
 
 def test_xlsx_export_contains_rows() -> None:
     sheet = load_workbook(io.BytesIO(to_xlsx(ROWS))).active
     values = [[cell.value for cell in row] for row in sheet.iter_rows()]
     assert values[0] == COLUMNS
-    assert values[1] == [
+    assert values[1][:7] == [
         "REQ-001",
         "obligation",
-        REAL_QUOTE,
-        2,
         "electrical",
         'Supply, max 3.6 V; "strict"',
-        "yes",
+        "no",
+        REAL_QUOTE,
+        2,
     ]
 
 
 def test_downloads_and_rerun(client: TestClient, fake_llm: FakeLLM, sample_pdf: Path) -> None:
     table = extract(client, fake_llm, sample_pdf, item(REAL_QUOTE))
     doc = table["document_id"]
-    csv_response = client.get(f"/documents/{doc}/requirements?format=csv")
-    assert "sensor_requirements.csv" in csv_response.headers["content-disposition"]
+    csv_response = client.get(f"/documents/{doc}/requirements?format=csv&scope=all")
+    assert "sensor_requirements_all.csv" in csv_response.headers["content-disposition"]
     assert REAL_QUOTE in csv_response.text
     assert client.get(f"/documents/{doc}/requirements?format=xlsx").content[:2] == b"PK"
     fake_llm.structured_replies.extend([reply(item(REAL_QUOTE))] * 10)

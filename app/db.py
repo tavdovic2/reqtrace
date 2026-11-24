@@ -35,6 +35,14 @@ class ExtractionStatus(StrEnum):
     FAILED = "failed"
 
 
+class ReviewStatus(StrEnum):
+    """A person's decision on an extracted requirement (`verified` is automatic)."""
+
+    PROPOSED = "proposed"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -85,6 +93,12 @@ class Document(Base):
     paraphrases_removed: Mapped[int] = mapped_column(default=0, server_default="0")
     extraction_started_at: Mapped[datetime | None] = mapped_column(default=None)
     extraction_finished_at: Mapped[datetime | None] = mapped_column(default=None)
+    # How the latest extraction was merged with the rows already there (see app/review.py).
+    extraction_kept: Mapped[int] = mapped_column(default=0, server_default="0")
+    extraction_added: Mapped[int] = mapped_column(default=0, server_default="0")
+    extraction_not_found: Mapped[int] = mapped_column(default=0, server_default="0")
+    # Highest REQ number ever given in this document, so that codes are never reused.
+    last_code_number: Mapped[int] = mapped_column(default=0, server_default="0")
 
     drawer: Mapped[Drawer] = relationship(back_populates="documents")
     requirements: Mapped[list["Requirement"]] = relationship(
@@ -109,8 +123,20 @@ class Requirement(Base):
     type: Mapped[str] = mapped_column(String(30))
     page: Mapped[int]
     quote: Mapped[str] = mapped_column(Text)
+    # Automatic: the quote was found on the cited page.
     verified: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+    # Human review: a person's decision, kept apart from `verified`. The quote and the page
+    # are never edited; an edit is stored next to the original text.
+    status: Mapped[str] = mapped_column(
+        String(20), default=ReviewStatus.PROPOSED, server_default=ReviewStatus.PROPOSED
+    )
+    edited_text: Mapped[str | None] = mapped_column(Text, default=None)
+    reviewer_note: Mapped[str | None] = mapped_column(Text, default=None)
+    reviewed_at: Mapped[datetime | None] = mapped_column(default=None)
+    # A reviewed row that the latest extraction did not find again is kept with this flag.
+    not_found: Mapped[bool] = mapped_column(default=False, server_default="0")
 
     document: Mapped[Document] = relationship(back_populates="requirements")
 
@@ -134,8 +160,20 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
         "extraction_started_at": "DATETIME",
         "extraction_finished_at": "DATETIME",
         "ingest_pages_done": "INTEGER NOT NULL DEFAULT 0",
+        "extraction_kept": "INTEGER NOT NULL DEFAULT 0",
+        "extraction_added": "INTEGER NOT NULL DEFAULT 0",
+        "extraction_not_found": "INTEGER NOT NULL DEFAULT 0",
+        "last_code_number": "INTEGER NOT NULL DEFAULT 0",
     },
-    "requirements": {"kind": "VARCHAR(20) NOT NULL DEFAULT 'obligation'"},
+    "requirements": {
+        "kind": "VARCHAR(20) NOT NULL DEFAULT 'obligation'",
+        # Existing rows become "proposed": nobody has reviewed them yet.
+        "status": "VARCHAR(20) NOT NULL DEFAULT 'proposed'",
+        "edited_text": "TEXT",
+        "reviewer_note": "TEXT",
+        "reviewed_at": "DATETIME",
+        "not_found": "BOOLEAN NOT NULL DEFAULT 0",
+    },
 }
 
 

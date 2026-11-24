@@ -12,7 +12,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Query, Request, Upl
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 
-from app import documents, export, requirements
+from app import documents, export, requirements, review
 from app.config import Settings
 from app.errors import ReqTraceError
 from app.llm import LLMOutputError, LLMUnavailableError
@@ -20,13 +20,17 @@ from app.qa import answer_question
 from app.schemas import (
     AskRequest,
     AskResponse,
+    BulkReview,
     DocumentOut,
     DrawerCreate,
     DrawerOut,
     DrawerUpdate,
     ErrorResponse,
     HealthResponse,
+    RequirementOut,
     RequirementsResponse,
+    RequirementUpdate,
+    StatusFilter,
 )
 from app.services import Services, build_services
 from app.vector_store import VectorStoreUnavailableError
@@ -285,23 +289,72 @@ def _register_routes(app: FastAPI) -> None:
         doc_id: int,
         services: ServicesDep,
         format: Annotated[Literal["json", "csv", "xlsx"], Query()] = "json",
+        status: Annotated[
+            StatusFilter | None,
+            Query(description="JSON only: rows with this review status, or 'not_found'."),
+        ] = None,
+        scope: Annotated[
+            export.ExportScope,
+            Query(description="Downloads only: accepted rows (default) or all rows with status."),
+        ] = "accepted",
     ) -> RequirementsResponse | Response:
-        """The requirement table as JSON, or as a CSV / Excel download."""
-        table = requirements.get_requirements(services, doc_id)
+        """The requirement table as JSON, or as a CSV / Excel download.
+
+        Downloads contain the accepted rows by default (`scope=accepted`), with the edited
+        text where there is one and always the verbatim quote and page; `scope=all` adds
+        every row with its review status, note and review time.
+        """
         if format == "json":
-            return table
+            return requirements.get_requirements(services, doc_id, status)
+        table = requirements.get_requirements(services, doc_id)
         stem = Path(documents.get_document(services, doc_id).filename).stem
+        suffix = "" if scope == "accepted" else "_all"
         if format == "csv":
-            content: str | bytes = export.to_csv(table.requirements)
+            content: str | bytes = export.to_csv(table.requirements, scope)
             media_type = "text/csv; charset=utf-8"
         else:
-            content = export.to_xlsx(table.requirements)
+            content = export.to_xlsx(table.requirements, scope)
             media_type = XLSX_MEDIA_TYPE
         return Response(
             content,
             media_type=media_type,
-            headers={"Content-Disposition": f'attachment; filename="{stem}_requirements.{format}"'},
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="{stem}_requirements{suffix}.{format}"'
+                )
+            },
         )
+
+    @app.patch(
+        "/requirements/{requirement_id}",
+        response_model=RequirementOut,
+        responses={404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
+        tags=["requirements"],
+    )
+    def update_requirement(
+        requirement_id: int, body: RequirementUpdate, services: ServicesDep
+    ) -> RequirementOut:
+        """Review one requirement: status, edited text, note. Fields left out are unchanged.
+
+        Setting a status records the review time (UTC); setting it back to `proposed`
+        clears it. `edited_text: null` restores the original text. The quote and the page
+        cannot be changed.
+        """
+        return review.update_requirement(services, requirement_id, body)
+
+    @app.post(
+        "/documents/{doc_id}/requirements/review",
+        response_model=RequirementsResponse,
+        responses={404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
+        tags=["requirements"],
+    )
+    def bulk_review(doc_id: int, body: BulkReview, services: ServicesDep) -> RequirementsResponse:
+        """Set one status on several requirements of the document, in one transaction.
+
+        If any id does not belong to the document, nothing is changed (422).
+        """
+        review.bulk_review(services, doc_id, body.ids, body.status)
+        return requirements.get_requirements(services, doc_id)
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")

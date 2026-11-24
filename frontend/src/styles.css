@@ -917,9 +917,9 @@ button:where(:not(.drawer-front)):disabled {
   font-size: 13px;
 }
 
-/* The table never scrolls sideways: fixed layout, narrow fixed columns for ID, page,
-   type and stamp, the rest shared by quote (most) and paraphrase, text wraps. When
-   the notepad is too narrow for six columns, every row becomes a card instead. */
+/* The table never scrolls sideways: fixed layout, narrow fixed columns for selection,
+   ID, kind, page, review and stamp; the requirement takes the rest and wraps. When the
+   notepad is too narrow for seven columns, every row becomes a card instead. */
 .table-scroll {
   flex: 1;
   min-height: 0;
@@ -949,6 +949,12 @@ button:where(:not(.drawer-front)):disabled {
 }
 .col-status {
   width: 6.8rem;
+}
+.col-select {
+  width: 2.4rem;
+}
+.col-review {
+  width: 13rem;
 }
 .col-quote {
   width: 48%;
@@ -1027,7 +1033,7 @@ button:where(:not(.drawer-front)):disabled {
   }
   .requirements-table tr {
     display: grid;
-    grid-template-columns: auto auto auto 1fr;
+    grid-template-columns: auto auto auto auto 1fr;
     gap: 4px 12px;
     align-items: center;
     padding: 10px 8px;
@@ -1038,19 +1044,21 @@ button:where(:not(.drawer-front)):disabled {
     border: 0;
   }
   .requirements-table .cell-quote,
-  .requirements-table .cell-paraphrase {
+  .requirements-table .cell-review {
     grid-column: 1 / -1;
   }
   .requirements-table .cell-quote {
     order: 5;
   }
-  .requirements-table .cell-paraphrase {
+  .requirements-table .cell-review {
     order: 6;
   }
-  .requirements-table .cell-paraphrase::before {
-    content: attr(data-label) ": ";
-    font-family: var(--mono);
-    font-size: 12px;
+  /* In a card the status colour runs down the whole card. */
+  .requirements-table tr.review-row {
+    border-left: 5px solid var(--row-status);
+  }
+  .requirements-table tr.review-row > td:first-child {
+    border-left: 0;
   }
 }
 
@@ -1186,4 +1194,244 @@ button:where(:not(.drawer-front)):disabled {
 
 .dev-mode-switch input {
   margin: 0;
+}
+
+/* ---------- Review (human decision; never red, which belongs to the VERIFIED stamp) ---------- */
+
+.review-proposed {
+  --row-status: var(--manila-dark);
+}
+.review-accepted {
+  --row-status: var(--cabinet);
+}
+.review-rejected {
+  --row-status: #6f675b;
+}
+
+.requirements-table tr.review-row > td:first-child {
+  border-left: 5px solid var(--row-status);
+}
+
+.requirements-table tr.review-row:focus {
+  outline: none;
+}
+
+.requirements-table tr.review-row:focus-visible,
+.requirements-table tr.review-row:focus-within {
+  outline: 3px solid var(--ink);
+  outline-offset: -3px;
+}
+
+.requirements-table tr.is-selected > td {
+  background: rgb(221 187 120 / 0.28);
+}
+
+.review-rejected .quote,
+.review-rejected .edited-text {
+  color: var(--ink-muted);
+}
+
+.review-tag {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--row-status);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.review-tag-proposed {
+  background: var(--manila);
+  color: var(--ink);
+}
+.review-tag-accepted {
+  background: var(--cabinet);
+  color: var(--paper);
+}
+.review-tag-rejected {
+  background: #6f675b;
+  color: var(--paper);
+}
+
+.not-found-tag {
+  display: inline-block;
+  margin: 4px 0 0 6px;
+  padding: 0 6px;
+  border: 1px dashed var(--ink);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+button.review-button {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+button.review-button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.review-summary {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+.review-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 10px;
+}
+
+.review-filters,
+.review-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-toolbar-label {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+button.filter-chip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+button.filter-chip[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.filter-count {
+  font-weight: 400;
+}
+
+.select-visible {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.downloads select {
+  padding: 2px 6px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: #fffdf6;
+  font-size: 13px;
+}
+
+.edited-text {
+  margin: 0 0 4px;
+}
+
+.edited-tag,
+.original-label,
+.note-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.edited-tag {
+  padding: 0 4px;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+}
+
+.original-label {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.review-note {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.review-editor textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: #fffdf6;
+  font: inherit;
+  resize: vertical;
+}
+
+.shortcut-list {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-shade);
+}
+
+.shortcut-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shortcut-list h3 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.shortcut-list p {
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+
+.shortcut-list dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.shortcut-list dl div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.shortcut-list dt {
+  min-width: 6.5rem;
+}
+
+.shortcut-list dd {
+  margin: 0;
+  font-size: 13px;
+}
+
+kbd {
+  padding: 0 5px;
+  border: 1px solid var(--ink-muted);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: #fffdf6;
+  font-family: var(--mono);
+  font-size: 12px;
 }

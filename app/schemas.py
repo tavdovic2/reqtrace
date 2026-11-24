@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 RequirementType = Literal[
     "functional",
@@ -15,6 +15,15 @@ RequirementType = Literal[
     "process",
     "other",
 ]
+
+
+# A person's decision on a requirement. Independent of `verified`, which is automatic.
+ReviewStatus = Literal["proposed", "accepted", "rejected"]
+# Filters of the requirement table: a status, or the reviewed rows that the latest
+# extraction did not find again.
+StatusFilter = Literal["proposed", "accepted", "rejected", "not_found"]
+EDITED_TEXT_MAX = 5000
+NOTE_MAX = 2000
 
 
 class ErrorResponse(BaseModel):
@@ -143,7 +152,8 @@ class AskResponse(BaseModel):
 class RequirementOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    code: str
+    id: int
+    code: str = Field(description="REQ-### code; stable across re-extraction, never reused.")
     kind: Literal["obligation", "limit"]
     quote: str = Field(description="Verbatim span of the page text that states the requirement.")
     paraphrase: str = Field(
@@ -152,7 +162,79 @@ class RequirementOut(BaseModel):
     )
     type: str
     page: int
-    verified: bool
+    verified: bool = Field(description="Automatic: the quote was found on the cited page.")
+    status: ReviewStatus = Field(description="A person's decision, independent of `verified`.")
+    edited_text: str | None = Field(
+        default=None, description="The requirement as a reviewer rewrote it; the quote is kept."
+    )
+    reviewer_note: str | None = None
+    reviewed_at: datetime | None = Field(
+        default=None, description="UTC time of the last status decision; null while proposed."
+    )
+    not_found: bool = Field(
+        default=False,
+        description="A reviewed row that the latest extraction did not find again.",
+    )
+    requirement_text: str = Field(
+        default="",
+        description="The text to use: the edited text, else the paraphrase, else the quote.",
+    )
+
+
+class RequirementUpdate(BaseModel):
+    """A review change to one requirement; fields that are left out stay as they are."""
+
+    status: ReviewStatus | None = None
+    edited_text: str | None = Field(
+        default=None,
+        max_length=EDITED_TEXT_MAX,
+        description="New requirement text; null removes the edit and restores the original.",
+    )
+    reviewer_note: str | None = Field(
+        default=None, max_length=NOTE_MAX, description="A note; null or blank removes it."
+    )
+
+    @field_validator("edited_text")
+    @classmethod
+    def _edited_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            raise ValueError(
+                "edited text must not be empty; send null to go back to the original text"
+            )
+        return value
+
+    @field_validator("reviewer_note")
+    @classmethod
+    def _note(cls, value: str | None) -> str | None:
+        return (value or "").strip() or None
+
+    @model_validator(mode="after")
+    def _something_to_change(self) -> "RequirementUpdate":
+        if not self.model_fields_set:
+            raise ValueError("nothing to change: send status, edited_text or reviewer_note")
+        if "status" in self.model_fields_set and self.status is None:
+            raise ValueError("status must be one of proposed, accepted, rejected")
+        return self
+
+
+class BulkReview(BaseModel):
+    """The same status for several requirements of one document, in one transaction."""
+
+    ids: list[int] = Field(min_length=1, max_length=10000)
+    status: ReviewStatus
+
+
+class ReviewCounts(BaseModel):
+    """Rows per review status. `not_found` rows are also counted under their status."""
+
+    total: int = 0
+    proposed: int = 0
+    accepted: int = 0
+    rejected: int = 0
+    not_found: int = 0
 
 
 class RequirementsResponse(BaseModel):
@@ -170,6 +252,14 @@ class RequirementsResponse(BaseModel):
     paraphrases_removed: int
     elapsed_seconds: float | None = Field(
         default=None, description="Time spent so far (running) or in total (done)."
+    )
+    kept: int = Field(default=0, description="Rows the latest extraction found again.")
+    added: int = Field(default=0, description="New rows from the latest extraction.")
+    no_longer_found: int = Field(
+        default=0, description="Reviewed rows the latest extraction did not find again (kept)."
+    )
+    counts: ReviewCounts = Field(
+        default_factory=ReviewCounts, description="Rows per review status, before filtering."
     )
     requirements: list[RequirementOut]
 

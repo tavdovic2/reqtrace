@@ -44,6 +44,10 @@ Ollama sized for a 6 GB GPU.
 
   The summary reports rows saved, quotes not found, descriptions dropped, sections
   skipped and the time taken. Results get codes `REQ-001`, … and export to CSV and XLSX.
+- **Human review of requirements** (see [Reviewing requirements](#reviewing-requirements)).
+  Every row can be accepted, rejected or edited, with a note. Exports contain only the
+  accepted rows by default. Running extraction again keeps these decisions and the
+  codes.
 - **Drawers.** Documents live in drawers. A question can search one drawer, chosen
   documents (API) or the whole cabinet. Temporary drawers delete their documents
   24 hours after upload.
@@ -122,6 +126,46 @@ to is normally stated as an instruction next to it ("Create a TrailList screen t
 shows all trails"), which is extracted; an input/expected-output table checks that task
 rather than adding one. A separate, flagged kind for such sentences would be possible
 later, but it would need its own evaluation so that it cannot lower datasheet precision.
+
+## Reviewing requirements
+
+Extraction proposes rows; an engineer decides. Two things are shown for every row and
+never mixed:
+
+- **Verified** (the red stamp) is automatic: the quote was found on the cited page.
+- **Status** is a person's decision: *proposed* (new), *accepted* or *rejected*. A
+  coloured tag and a coloured left margin show it: manila for proposed, green for
+  accepted, grey for rejected. A row can be verified and still rejected.
+
+In the Requirements tab each row can be accepted, rejected, reset to proposed, given a
+note, or have its requirement text edited. The verbatim quote and the page are never
+editable: an edit is stored next to the original text, which stays visible under it as
+"Original quote (read-only)". A filter (All, Proposed, Accepted, Rejected, Not found)
+and a line of counts sit above the table. Rows can be selected with their checkboxes or
+"Select all visible" and accepted or rejected together. Changes show at once; if the
+server refuses one, it is undone and an error is shown.
+
+**Keyboard.** Click a row or tab into the table, then: ↑/↓ or K/J move between rows,
+A accept, R reject, U reset to proposed, E edit the text, N edit the note, Space select,
+Escape cancel an edit, ? show the list of shortcuts. Shortcuts never fire while you
+type in a field. The current row has a visible outline, and every decision is announced
+to screen readers.
+
+**Running extraction again keeps human work.** New rows are matched to the existing
+ones by page and normalised quote text (the normalisation used to verify quotes). A
+matched row keeps its `REQ-###` code, status, edited text, note and review time; only its
+extraction fields (kind, type, paraphrase) are refreshed. New rows are proposed and get
+the next free codes; a code is never reused, even after its row was removed. A row that
+a person accepted, rejected, edited or commented on and that the new run does not find
+is kept and marked "Not found in latest extraction"; unreviewed rows that are not found
+again are removed. The summary shows how many rows were kept, added and no longer found.
+
+**Exports.** "Accepted only" (the default, `?scope=accepted`) contains the accepted rows.
+Its "Requirement" column is the edited text where there is one, otherwise the original
+text (the paraphrase, else the quote), and it always includes the verbatim quote and the
+page. "All rows with status" (`?scope=all`) contains every row and adds the review status,
+the reviewer note, the review time (UTC) and whether the latest extraction still found
+the row. "Verified (quote on page)" and "Review status" are separate columns.
 
 ## Architecture
 
@@ -230,7 +274,9 @@ All settings are environment variables (or a `.env` file; see `.env.example`).
 | `DELETE /documents/{id}` | Delete a document with its vectors and file |
 | `POST /ask` | `question`, optional `drawer_id`, optional `doc_ids` → `answer`, `answered`, `sources` (each with `filename`, `doc_id`, `page`, `snippet`, `highlight`) and `lines` (one per claim, with the indexes of its sources). With `"debug": true` (off by default) also `debug`: the searched phrasings, the retrieved chunks with rank, page and score, and each discarded claim with its reason |
 | `POST /documents/{id}/requirements` | Start extraction (`202`); poll the GET endpoint for progress |
-| `GET /documents/{id}/requirements` | The table (`kind`, `quote`, `page`, `type`, `paraphrase`, …), rejection counts, `skipped_sections`, `elapsed_seconds`; `?format=csv` or `?format=xlsx` to download (columns: ID, Kind, Quote (verbatim), Page, Type, Paraphrase (model), Verified) |
+| `GET /documents/{id}/requirements` | The table (`id`, `code`, `kind`, `quote`, `page`, `type`, `paraphrase`, `verified`, `status`, `edited_text`, `reviewer_note`, `reviewed_at`, `not_found`, `requirement_text`), rejection counts, `skipped_sections`, `elapsed_seconds`, `counts` per review status and the merge of the latest extraction (`kept`, `added`, `no_longer_found`). `?status=proposed\|accepted\|rejected\|not_found` filters the rows. `?format=csv` or `?format=xlsx` downloads the accepted rows; add `&scope=all` for every row with its review status, note and time |
+| `PATCH /requirements/{id}` | Review one row: `status`, `edited_text` (`null` restores the original), `reviewer_note`. Fields left out are unchanged; a status records `reviewed_at`, `proposed` clears it. The quote and the page cannot be changed |
+| `POST /documents/{id}/requirements/review` | `ids` and `status`: the same status for several rows in one transaction. If any id belongs to another document, nothing changes (`422`) |
 
 ## Evaluation
 
@@ -506,6 +552,11 @@ normal server, so extraction stays sequential (`EXTRACTION_CONCURRENCY=1`).
 - **No authentication.** Anyone who can reach the ports can read and delete documents.
   Run it on a trusted machine or network.
 - **Conversation history lives in the browser tab** and is lost on reload.
+- **Review has no user accounts.** A review records when a decision was made, not who
+  made it, and there is no history of earlier decisions; the last change wins.
+- **Matching after re-extraction is exact.** A row is matched by page and normalised
+  quote. If a new run quotes a slightly longer or shorter span of the same sentence, it
+  counts as a new row, and the reviewed old one is kept as "not found".
 
 ## Roadmap
 

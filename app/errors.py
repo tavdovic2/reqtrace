@@ -33,3 +33,9 @@ class UnsupportedMediaTypeError(ReqTraceError):
 
 class ServiceUnavailableError(ReqTraceError):
     status_code = 503
+
+
+class UnprocessableError(ReqTraceError):
+    """A well-formed request that refers to something it cannot apply to."""
+
+    status_code = 422
