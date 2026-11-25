@@ -1,0 +1,24 @@
+# Optional: parse and embed on an NVIDIA GPU inside Docker.
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+# Needs an NVIDIA driver and GPU support in Docker (Docker Desktop with WSL2 on Windows,
+# the NVIDIA Container Toolkit on Linux). The image is several GB larger than the CPU one.
+# On a 6 GB GPU shared with Ollama, use only one of the two devices; see README,
+# Performance.
+
+services:
+  api:
+    build:
+      args:
+        TORCH_PACKAGES: "torch==2.15.0+cu132 torchvision==0.29.1+cu132"
+        TORCH_INDEX_URL: https://download.pytorch.org/whl/cu132
+        ONNXRUNTIME_GPU: "true"
+    environment:
+      PARSE_DEVICE: ${PARSE_DEVICE:-cuda}
+      EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cpu}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

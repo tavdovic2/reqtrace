@@ -14,11 +14,19 @@ RUN apt-get update \
 WORKDIR /app
 
 # CPU-only PyTorch first, so that Docling does not pull the much larger CUDA build.
-RUN pip install torch==2.15.0 torchvision==0.29.2 --index-url https://download.pytorch.org/whl/cpu
+# docker-compose.gpu.yml overrides these for a CUDA build (see README, Performance).
+ARG TORCH_PACKAGES="torch==2.15.0 torchvision==0.29.2"
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+ARG ONNXRUNTIME_GPU=false
+RUN pip install ${TORCH_PACKAGES} --index-url ${TORCH_INDEX_URL}
 
 # Dependencies first (cached while only application code changes), then the package itself.
 COPY pyproject.toml README.md LICENSE ./
 RUN mkdir app && touch app/__init__.py && pip install . && rm -rf app
+# GPU build: replace ONNX Runtime with its CUDA build for embedding (EMBEDDING_DEVICE=cuda).
+RUN if [ "$ONNXRUNTIME_GPU" = "true" ]; then \
+        pip uninstall -y onnxruntime && pip install "onnxruntime-gpu[cuda,cudnn]==1.32.0"; \
+    fi
 COPY app ./app
 RUN pip install --no-deps .
 
