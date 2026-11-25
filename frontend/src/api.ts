@@ -38,6 +38,8 @@ export interface Source {
   snippet: string;
   /** The evidence passage exactly as it appears in the page text, if the API found it. */
   highlight: string | null;
+  /** Every evidence passage the answer relies on from this page, exactly as in the page text. */
+  highlights: string[];
 }
 
 export interface AnswerLine {

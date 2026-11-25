@@ -1118,12 +1118,26 @@ button:where(:not(.drawer-front)):disabled {
 }
 
 /* Evidence passage on the PDF page: the yellow highlighter, over the transparent text layer. */
+/* Multiply blends the yellow with the page drawn below it, so the printed text stays black
+   and readable; the text layer's own glyphs are transparent. */
 .react-pdf__Page .textLayer mark.evidence-mark {
-  background: rgb(247 208 70 / 0.55);
+  background: var(--highlighter);
   color: transparent;
+  mix-blend-mode: multiply;
   border-radius: 2px;
   margin: -1px -2px;
   padding: 1px 2px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* With several passages, the one the "1 of N" buttons point at is underlined. */
+.react-pdf__Page .textLayer mark.evidence-mark.is-current {
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+
+.passage-pager {
+  padding-top: 4px;
 }
 
 .viewer-file {

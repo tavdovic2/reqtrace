@@ -20,9 +20,14 @@ export function App() {
   const openDrawer = drawers.find((d) => d.id === openDrawerId) ?? null;
 
   const openPage = (doc: DocumentInfo, page: number, highlight: string | null = null) =>
-    setViewer({ docId: doc.id, filename: doc.filename, page, highlight });
+    setViewer({ docId: doc.id, filename: doc.filename, page, highlights: highlight ? [highlight] : [] });
   const openSource = (source: Source) =>
-    setViewer({ docId: source.doc_id, filename: source.filename, page: source.page, highlight: source.highlight });
+    setViewer({
+      docId: source.doc_id,
+      filename: source.filename,
+      page: source.page,
+      highlights: source.highlights?.length ? source.highlights : source.highlight ? [source.highlight] : [],
+    });
 
   return (
     <div className="desk">
