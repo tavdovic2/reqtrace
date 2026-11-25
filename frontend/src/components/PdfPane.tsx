@@ -5,7 +5,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
 import { fileUrl } from "../api";
-import { locatePassage, renderItem, type ItemRanges } from "../highlight";
+import { locatePassages, renderItem, type PageItem, type PassageMatches } from "../highlight";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
@@ -13,9 +13,12 @@ export interface ViewerTarget {
   docId: number;
   filename: string;
   page: number;
-  /** Evidence passage to mark on the cited page, as it appears in the page text. */
-  highlight: string | null;
+  /** Evidence passages to mark on the cited page, as they appear in the page text. */
+  highlights: string[];
 }
+
+/** Space left above a passage scrolled into view, in pixels. */
+const SCROLL_MARGIN = 48;
 
 interface PdfPaneProps {
   target: ViewerTarget;
@@ -36,10 +39,26 @@ function useWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
-/** The text items of one rendered page, kept so a new passage can be marked without reloading. */
+/** The text items of one rendered page, kept so new passages can be marked without reloading. */
 interface PageText {
   key: string;
-  texts: string[];
+  items: PageItem[];
+}
+
+const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+/** Scroll the first mark of `passage` into view inside `frame` (or the window when the
+ *  frame does not scroll, as in the narrow layout), with some room above it. */
+function scrollToPassage(frame: HTMLElement | null, passage: number) {
+  const mark = frame?.querySelector<HTMLElement>(`mark.evidence-mark[data-passage="${passage}"]`);
+  if (!frame || !mark) return;
+  const behavior: ScrollBehavior = reducedMotion() ? "auto" : "smooth";
+  const offset = mark.getBoundingClientRect().top - frame.getBoundingClientRect().top;
+  if (frame.scrollHeight > frame.clientHeight + 1) {
+    frame.scrollTo({ top: frame.scrollTop + offset - SCROLL_MARGIN, behavior });
+  } else {
+    window.scrollBy({ top: mark.getBoundingClientRect().top - SCROLL_MARGIN, behavior });
+  }
 }
 
 export function PdfPane({ target, onClose }: PdfPaneProps) {
@@ -49,6 +68,8 @@ export function PdfPane({ target, onClose }: PdfPaneProps) {
   // The page count belongs to one document; a stale count from the previous one is ignored.
   const [loaded, setLoaded] = useState<{ docId: number; pages: number } | null>(null);
   const [pageText, setPageText] = useState<PageText | null>(null);
+  // Which of the found passages is current (index into matches.found).
+  const [current, setCurrent] = useState(0);
   const [frameRef, width] = useWidth<HTMLDivElement>();
 
   // Jump to the cited page when a new source is opened. This is done while rendering rather
@@ -57,28 +78,32 @@ export function PdfPane({ target, onClose }: PdfPaneProps) {
   if (target !== shownTarget) {
     setShownTarget(target);
     setPage(target.page);
+    setCurrent(0);
   }
 
   const pageCount = loaded?.docId === target.docId ? loaded.pages : 0;
-  // The passage is marked only on the page it was cited from.
-  const passage = page === target.page ? target.highlight : null;
-  // The page's text is loaded once per page; the marks are recomputed whenever the passage
-  // changes. (Computing them only when the text loads missed a second chip on the same page.)
+  // Passages are marked only on the page they were cited from.
+  const passages = page === target.page ? target.highlights : null;
+  // The page's text is loaded once per page; the marks are recomputed whenever the passages
+  // change. (Computing them only when the text loads missed a second chip on the same page.)
   const textKey = `${target.docId}:${page}`;
-  const texts = pageText?.key === textKey ? pageText.texts : null;
-  const ranges: ItemRanges | null = useMemo(
-    () => (texts && passage ? locatePassage(texts, passage) : null),
-    [texts, passage],
+  const items = pageText?.key === textKey ? pageText.items : null;
+  const matches: PassageMatches | null = useMemo(
+    () => (items && passages && passages.length > 0 ? locatePassages(items, passages) : null),
+    [items, passages],
   );
+  const found = matches?.found ?? [];
+  const currentPassage = found.length > 0 ? found[Math.min(current, found.length - 1)] : -1;
 
   const renderText = useCallback(
-    ({ str, itemIndex }: { str: string; itemIndex: number }) => renderItem(str, ranges?.get(itemIndex)),
-    [ranges],
+    ({ str, itemIndex }: { str: string; itemIndex: number }) =>
+      renderItem(str, matches?.ranges.get(itemIndex), currentPassage),
+    [matches, currentPassage],
   );
 
-  const scrollToMark = () => {
-    frameRef.current?.querySelector(".evidence-mark")?.scrollIntoView({ block: "center" });
-  };
+  // Runs after every text-layer render: a new page, new passages, a resize, another passage.
+  const showCurrent = () => scrollToPassage(frameRef.current, currentPassage);
+  const step = (delta: number) => setCurrent((index) => (index + delta + found.length) % found.length);
 
   return (
     <aside className="viewer" aria-labelledby="viewer-title">
@@ -113,16 +138,34 @@ export function PdfPane({ target, onClose }: PdfPaneProps) {
                   pageNumber={page}
                   width={width > 0 ? width - 16 : undefined}
                   loading={<p role="status">{t("viewer.loading")}</p>}
-                  onGetTextSuccess={({ items }) =>
-                    setPageText({ key: textKey, texts: items.map((item) => ("str" in item ? item.str : "")) })
+                  onGetTextSuccess={({ items: content }) =>
+                    setPageText({
+                      key: textKey,
+                      items: content.map((item) =>
+                        "str" in item ? { str: item.str, y: item.transform[5], height: item.height } : { str: "" },
+                      ),
+                    })
                   }
                   customTextRenderer={renderText}
-                  onRenderTextLayerSuccess={scrollToMark}
+                  onRenderTextLayerSuccess={showCurrent}
                 />
               </div>
             </Document>
           </Suspense>
         </div>
+        {found.length > 1 && (
+          <nav className="pager passage-pager" aria-label={t("viewer.passages")}>
+            <button type="button" onClick={() => step(-1)}>
+              ↑ <span className="visually-hidden">{t("viewer.previousPassage")}</span>
+            </button>
+            <span aria-live="polite">
+              {t("viewer.passageOf", { current: Math.min(current, found.length - 1) + 1, total: found.length })}
+            </span>
+            <button type="button" onClick={() => step(1)}>
+              <span className="visually-hidden">{t("viewer.nextPassage")}</span> ↓
+            </button>
+          </nav>
+        )}
         {pageCount > 0 && (
           <nav className="pager" aria-label={t("viewer.title")}>
             <button type="button" onClick={() => setPage((p) => p - 1)} disabled={page <= 1}>

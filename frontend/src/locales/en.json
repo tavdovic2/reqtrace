@@ -220,7 +220,11 @@
     "loading": "Loading page…",
     "error": "The PDF could not be displayed.",
     "close": "Close page view",
-    "openFile": "Open the PDF in a new tab"
+    "openFile": "Open the PDF in a new tab",
+    "passages": "Highlighted passages",
+    "previousPassage": "Previous highlighted passage",
+    "nextPassage": "Next highlighted passage",
+    "passageOf": "{{current}} of {{total}}"
   },
   "errors": {
     "network": "Cannot reach the server."

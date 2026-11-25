@@ -205,33 +205,38 @@ def build_sources(
     chunks: list[ScoredChunk],
     claims: list[Claim],
     evidence: list[Evidence],
-    locate: Callable[[ScoredChunk, list[str]], str | None],
+    locate: Callable[[ScoredChunk, list[str]], list[str]],
 ) -> list[Source]:
     """One source per cited document page, in order of first citation.
 
-    `highlight` is the evidence passage as it appears in the page text, or None
-    when it cannot be found there.
+    `highlights` are the evidence passages of every cited excerpt on that page, each as
+    it appears in the page text (passages not found there are left out); `highlight` is
+    the first of them, or None.
     """
     quotes: dict[int, list[str]] = {}
     for item in evidence:
         quotes.setdefault(item.excerpt, []).append(item.quote)
     sources: list[Source] = []
-    seen: set[tuple[int, int]] = set()
-    for number in (n for claim in claims for n in claim.excerpts):
+    by_page: dict[tuple[int, int], Source] = {}
+    for number in dict.fromkeys(n for claim in claims for n in claim.excerpts):
         chunk = chunks[number - 1]
         key = (chunk.payload.doc_id, chunk.payload.page)
-        if key in seen:
-            continue
-        seen.add(key)
-        sources.append(
-            Source(
+        found = locate(chunk, quotes.get(number, []))
+        source = by_page.get(key)
+        if source is None:
+            source = Source(
                 filename=chunk.payload.filename,
                 doc_id=chunk.payload.doc_id,
                 page=chunk.payload.page,
                 snippet=_snippet(chunk.payload.text),
-                highlight=locate(chunk, quotes.get(number, [])),
             )
-        )
+            by_page[key] = source
+            sources.append(source)
+        for passage in found:
+            if passage not in source.highlights:
+                source.highlights.append(passage)
+    for source in sources:
+        source.highlight = source.highlights[0] if source.highlights else None
     return sources
 
 
@@ -278,23 +283,24 @@ def answer_lines(
     return lines
 
 
-def _page_locator(services: Services) -> Callable[[ScoredChunk, list[str]], str | None]:
-    """Find an evidence quote in the cited page's text layer; return the exact span."""
+def _page_locator(services: Services) -> Callable[[ScoredChunk, list[str]], list[str]]:
+    """Find evidence quotes in the cited page's text layer; return their exact spans."""
     settings = services.settings
     pages: dict[tuple[int, int], str] = {}
 
-    def locate(chunk: ScoredChunk, candidates: list[str]) -> str | None:
+    def locate(chunk: ScoredChunk, candidates: list[str]) -> list[str]:
         key = (chunk.payload.doc_id, chunk.payload.page)
         if key not in pages:
             path: Path = file_path(services, chunk.payload.doc_id)
             pages[key] = extract_page_text(path, chunk.payload.page) if path.exists() else ""
+        found = []
         for quote in candidates:
             match = locate_quote(
                 quote, pages[key], settings.quote_match_threshold, settings.quote_min_chars
             )
             if match is not None:
-                return pages[key][match.start : match.end]
-        return None
+                found.append(pages[key][match.start : match.end])
+        return found
 
     return locate
 

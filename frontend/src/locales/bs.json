@@ -228,7 +228,11 @@
     "loading": "Učitavam stranicu…",
     "error": "PDF se ne može prikazati.",
     "close": "Zatvori prikaz stranice",
-    "openFile": "Otvori PDF u novoj kartici"
+    "openFile": "Otvori PDF u novoj kartici",
+    "passages": "Označeni odlomci",
+    "previousPassage": "Prethodni označeni odlomak",
+    "nextPassage": "Sljedeći označeni odlomak",
+    "passageOf": "{{current}} od {{total}}"
   },
   "errors": {
     "network": "Server nije dostupan."

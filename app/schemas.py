@@ -103,7 +103,12 @@ class Source(BaseModel):
     snippet: str
     highlight: str | None = Field(
         default=None,
-        description="The evidence passage exactly as it appears in the page text, if found.",
+        description="The first of `highlights`, or null (kept for older clients).",
+    )
+    highlights: list[str] = Field(
+        default_factory=list,
+        description="Every evidence passage the answer relies on from this page, each exactly "
+        "as it appears in the page text; passages that could not be found are left out.",
     )
 
 
