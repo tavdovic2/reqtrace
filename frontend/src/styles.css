@@ -1118,12 +1118,17 @@ button:where(:not(.drawer-front)):disabled {
 }
 
 /* Evidence passage on the PDF page: the yellow highlighter, over the transparent text layer. */
-/* Multiply blends the yellow with the page drawn below it, so the printed text stays black
-   and readable; the text layer's own glyphs are transparent. */
+/* The text layer is blended with the page drawn below it (multiply), so the highlighter
+   yellow sits behind the printed text and the text stays black and readable. The layer's
+   own glyphs are transparent; only the marks are coloured. (Blending the marks alone does
+   nothing: the text layer is its own stacking context.) */
+.react-pdf__Page .textLayer {
+  mix-blend-mode: multiply;
+}
+
 .react-pdf__Page .textLayer mark.evidence-mark {
   background: var(--highlighter);
   color: transparent;
-  mix-blend-mode: multiply;
   border-radius: 2px;
   margin: -1px -2px;
   padding: 1px 2px;
