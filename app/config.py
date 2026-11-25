@@ -2,6 +2,7 @@
 
 from functools import cached_property
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,7 +32,23 @@ class Settings(BaseSettings):
     dense_passage_prefix: str = "passage: "
     sparse_model: str = "Qdrant/bm25"
     embedding_threads: int | None = None
+    # Chunks per embedding call at ingestion. Texts of a batch are padded to the longest
+    # one, so on the CPU one chunk per call is fastest (chunks are also sorted by length);
+    # on a GPU, 16 or more is faster (README, Performance).
+    embedding_batch_size: int = Field(default=1, ge=1, le=512)
+    # "cuda" needs onnxruntime-gpu and falls back to the CPU without it.
+    embedding_device: Literal["cpu", "cuda"] = "cpu"
     models_cache_dir: Path | None = None
+
+    # Docling parsing. Threads: 0 = one per CPU core. "fast" table mode is quicker but
+    # less exact on complex tables. "cuda" falls back to the CPU when it is not available;
+    # on a 6 GB GPU shared with Ollama keep "cpu" (see README, Performance).
+    parse_threads: int = Field(default=0, ge=0, le=256)
+    parse_table_mode: Literal["accurate", "fast"] = "fast"
+    parse_device: Literal["cpu", "cuda", "auto"] = "cpu"
+    # Reuse the parsed result of a PDF with the same content (cache under DATA_DIR,
+    # safe to delete).
+    parse_cache: bool = True
 
     ollama_base_url: str = "http://localhost:11434"
     llm_model: str = "qwen3:4b"
@@ -74,6 +91,11 @@ class Settings(BaseSettings):
     dedup_threshold: float = Field(default=92.0, ge=0, le=100)
 
     cors_origins: list[str] = ["http://localhost:5173"]
+
+    @cached_property
+    def parse_cache_dir(self) -> Path:
+        """Directory of the parse cache; deleting it only means PDFs are parsed again."""
+        return self.data_dir / "cache" / "parsed"
 
     @cached_property
     def uploads_dir(self) -> Path:

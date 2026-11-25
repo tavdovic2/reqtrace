@@ -1,7 +1,9 @@
 """Dense and sparse (BM25) embeddings with FastEmbed, on the CPU."""
 
 import logging
+import os
 import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -19,6 +21,14 @@ class SparseVector:
 class EmbeddedText:
     dense: list[float]
     sparse: SparseVector
+
+
+@dataclass
+class EmbedTimings:
+    """Seconds spent in each model since the last reset (for the ingestion timing log)."""
+
+    dense: float = 0.0
+    sparse: float = 0.0
 
 
 class Embedder(Protocol):
@@ -47,6 +57,7 @@ class FastEmbedEmbedder:
         passage_prefix: str = "",
         cache_dir: Path | None = None,
         threads: int | None = None,
+        device: str = "cpu",
     ) -> None:
         self._dense_name = dense_model
         self._sparse_name = sparse_model
@@ -54,9 +65,11 @@ class FastEmbedEmbedder:
         self._passage_prefix = passage_prefix
         self._cache_dir = str(cache_dir) if cache_dir else None
         self._threads = threads
+        self._device = device
         self._dense: object | None = None
         self._sparse: object | None = None
         self._lock = threading.Lock()
+        self.timings = EmbedTimings()
 
     def _models(self) -> tuple[object, object]:
         with self._lock:
@@ -67,10 +80,38 @@ class FastEmbedEmbedder:
                     "Loading embedding models %s and %s", self._dense_name, self._sparse_name
                 )
                 self._dense = TextEmbedding(
-                    self._dense_name, cache_dir=self._cache_dir, threads=self._threads
+                    self._dense_name,
+                    cache_dir=self._cache_dir,
+                    # ONNX Runtime's own default uses fewer threads than there are cores;
+                    # all logical cores embedded TMP117 about 15% faster (README, Performance).
+                    threads=self._threads or os.cpu_count(),
+                    **self._device_options(),
                 )
                 self._sparse = SparseTextEmbedding(self._sparse_name, cache_dir=self._cache_dir)
         return self._dense, self._sparse
+
+    def _device_options(self) -> dict[str, object]:
+        """ONNX Runtime providers for the dense model: CUDA when asked for and installed.
+
+        The CPU is named explicitly: with onnxruntime-gpu installed, ONNX Runtime would
+        otherwise pick CUDA by itself and take GPU memory that Ollama needs.
+        """
+        cpu_only: dict[str, object] = {"providers": ["CPUExecutionProvider"]}
+        if self._device != "cuda":
+            return cpu_only
+        import onnxruntime
+
+        if "CUDAExecutionProvider" not in onnxruntime.get_available_providers():
+            logger.warning(
+                "EMBEDDING_DEVICE=cuda but onnxruntime-gpu is not installed; embedding on the CPU"
+            )
+            return cpu_only
+        # The CUDA and cuDNN libraries come from the torch or nvidia-* wheels; ONNX Runtime
+        # finds them only once they are loaded.
+        preload = getattr(onnxruntime, "preload_dlls", None)
+        if preload is not None:
+            preload()
+        return {"providers": ["CUDAExecutionProvider", "CPUExecutionProvider"]}
 
     @property
     def dense_size(self) -> int:
@@ -82,8 +123,12 @@ class FastEmbedEmbedder:
     def embed_passages(self, texts: list[str]) -> list[EmbeddedText]:
         """Embed document chunks."""
         dense_model, sparse_model = self._models()
-        dense = dense_model.embed([self._passage_prefix + t for t in texts])  # type: ignore[attr-defined]
-        sparse = sparse_model.embed(texts)  # type: ignore[attr-defined]
+        started = time.monotonic()
+        dense = list(dense_model.embed([self._passage_prefix + t for t in texts]))  # type: ignore[attr-defined]
+        middle = time.monotonic()
+        sparse = list(sparse_model.embed(texts))  # type: ignore[attr-defined]
+        self.timings.dense += middle - started
+        self.timings.sparse += time.monotonic() - middle
         return [
             EmbeddedText(d.tolist(), SparseVector(s.indices.tolist(), s.values.tolist()))
             for d, s in zip(dense, sparse, strict=True)

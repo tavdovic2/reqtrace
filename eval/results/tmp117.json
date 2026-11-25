@@ -4,20 +4,20 @@
     "LLM": "qwen3:4b",
     "Dense embeddings": "intfloat/multilingual-e5-large",
     "Chunks given to the model": "8",
-    "Date": "2026-11-20",
-    "Ingestion": "412 s",
-    "Duration": "1149 s"
+    "Date": "2026-11-25",
+    "Ingestion": "162 s",
+    "Duration": "840 s"
   },
   "metrics": [
     {
       "mode": "dense",
       "hit_rate": 0.9230769230769231,
-      "answer_accuracy": 0.7307692307692307,
+      "answer_accuracy": 0.8076923076923077,
       "abstention_accuracy": 1.0,
       "answerable": 26,
       "unanswerable": 6,
       "hit_rate_at_k": 0.9230769230769231,
-      "avg_answer_seconds": 6.6275,
+      "avg_answer_seconds": 5.971875,
       "by_language": {
         "bs": {
           "answerable": 6,
@@ -27,7 +27,7 @@
         },
         "en": {
           "answerable": 20,
-          "answer_accuracy": 0.7,
+          "answer_accuracy": 0.8,
           "unanswerable": 4,
           "refusal_accuracy": 1.0
         }
@@ -41,17 +41,17 @@
       "answerable": 26,
       "unanswerable": 6,
       "hit_rate_at_k": 1.0,
-      "avg_answer_seconds": 7.0024999999999995,
+      "avg_answer_seconds": 5.9865625,
       "by_language": {
         "bs": {
           "answerable": 6,
-          "answer_accuracy": 0.8333333333333334,
+          "answer_accuracy": 1.0,
           "unanswerable": 2,
           "refusal_accuracy": 1.0
         },
         "en": {
           "answerable": 20,
-          "answer_accuracy": 0.7,
+          "answer_accuracy": 0.65,
           "unanswerable": 4,
           "refusal_accuracy": 1.0
         }
@@ -65,7 +65,7 @@
       "answerable": 26,
       "unanswerable": 6,
       "hit_rate_at_k": 1.0,
-      "avg_answer_seconds": 6.1175,
+      "avg_answer_seconds": 6.1040625,
       "by_language": {
         "bs": {
           "answerable": 6,
@@ -124,7 +124,7 @@
     ],
     "extra": [],
     "wrong_kind": [],
-    "seconds": 85.42200000025332
+    "seconds": 83.03099999995902
   },
   "questions": [
     {
@@ -151,7 +151,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 13.23
+      "seconds": 9.61
     },
     {
       "id": "t02",
@@ -161,23 +161,23 @@
         1,
         1,
         6,
-        2,
         7,
         39,
+        5,
         6,
-        5
+        34
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "±0.1 °C (maximum) from -20 °C to 50 °C",
+      "answer": "The accuracy from –20 °C to 50 °C is ±0.1 °C (maximum)",
       "cited_pages": [
         1,
         6
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.86
+      "seconds": 6.81
     },
     {
       "id": "t03",
@@ -196,13 +196,13 @@
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "0.0078 °C (1 LSB)",
+      "answer": "Rezolucija mjerenja temperature je 0.0078 °C (1 LSB)",
       "cited_pages": [
         1
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 11.59
+      "seconds": 11.91
     },
     {
       "id": "t04",
@@ -227,7 +227,7 @@
       ],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 6.95
+      "seconds": 7.17
     },
     {
       "id": "t05",
@@ -239,9 +239,9 @@
         21,
         21,
         22,
-        2,
         34,
-        24
+        24,
+        39
       ],
       "hit": true,
       "answered": true,
@@ -252,7 +252,7 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 7.16
+      "seconds": 7.38
     },
     {
       "id": "t06",
@@ -271,13 +271,13 @@
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The recommended value for the SDA and ALERT pullup resistors is 5 kΩ\nIn some applications, the pullup resistor value can be lower or higher than 5 kΩ\nPullup resistors larger than 2 kΩ are recommended for SDA and ALERT pins",
+      "answer": "The recommended value for the SDA and ALERT pullup resistors is 5 kΩ.",
       "cited_pages": [
         33
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.97
+      "seconds": 4.69
     },
     {
       "id": "t07",
@@ -287,11 +287,11 @@
         35,
         36,
         33,
-        6,
         34,
         5,
         2,
-        2
+        7,
+        12
       ],
       "hit": true,
       "answered": true,
@@ -303,7 +303,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.5
+      "seconds": 5.41
     },
     {
       "id": "t08",
@@ -316,20 +316,19 @@
         10,
         2,
         6,
-        2,
-        6
+        7,
+        7
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "6 V\n5.5 V",
+      "answer": "6 V",
       "cited_pages": [
-        5,
-        35
+        5
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 7.8
+      "seconds": 4.77
     },
     {
       "id": "t09",
@@ -352,7 +351,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 1.78
+      "seconds": 1.67
     },
     {
       "id": "t10",
@@ -375,7 +374,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 2.19
+      "seconds": 2.28
     },
     {
       "id": "t11",
@@ -400,7 +399,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 3.45
+      "seconds": 3.78
     },
     {
       "id": "t12",
@@ -426,32 +425,32 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.47
+      "seconds": 5.31
     },
     {
       "id": "t13",
       "mode": "dense",
       "answerable": true,
       "retrieved_pages": [
-        6,
         14,
         10,
         12,
         12,
+        6,
+        6,
         33,
-        34,
-        22
+        34
       ],
       "hit": true,
       "answered": true,
-      "correct": false,
-      "answer": "The typical shutdown current is 0.5 μA at 25 °C with serial bus inactive, SCL, SDA, and ADD0 = V+; 5 μA at 150 °C with serial bus inactive, SCL, SDA, and ADD0 = V+\nThe shutdown current is 17 μA with serial bus active, SCL frequency = 400 kHz, and ADD0 = V+",
+      "correct": true,
+      "answer": "The typical shutdown current is 0.15 to 0.5 μA at 25 °C with the serial bus inactive, SCL, SDA, and ADD0 connected to V+.",
       "cited_pages": [
         6
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 11.06
+      "seconds": 6.81
     },
     {
       "id": "t14",
@@ -476,7 +475,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.69
+      "seconds": 5.53
     },
     {
       "id": "t15",
@@ -486,22 +485,23 @@
         14,
         12,
         14,
+        6,
         12,
         34,
-        6,
         7,
-        34
+        6
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "135 µA",
+      "answer": "The quiescent current during active conversion is 135 µA",
       "cited_pages": [
-        14
+        14,
+        6
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.52
+      "seconds": 5.78
     },
     {
       "id": "t16",
@@ -524,7 +524,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.31
+      "seconds": 7.12
     },
     {
       "id": "t17",
@@ -537,8 +537,8 @@
         20,
         34,
         7,
-        6,
-        22
+        22,
+        6
       ],
       "hit": true,
       "answered": true,
@@ -549,7 +549,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 6.06
+      "seconds": 5.58
     },
     {
       "id": "t18",
@@ -558,23 +558,23 @@
       "retrieved_pages": [
         12,
         35,
-        2,
         18,
-        7,
         14,
         15,
-        22
+        7,
+        22,
+        34
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The device requires 1.5 ms to power up after the supply reaches the operating range before conversions can begin.",
+      "answer": "The device requires 1.5 ms to power up after the supply reaches the operating range",
       "cited_pages": [
         12
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.23
+      "seconds": 3.94
     },
     {
       "id": "t19",
@@ -587,8 +587,8 @@
         33,
         21,
         39,
-        21,
-        3
+        3,
+        21
       ],
       "hit": true,
       "answered": false,
@@ -597,7 +597,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.41
+      "seconds": 4.94
     },
     {
       "id": "t20",
@@ -616,13 +616,13 @@
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The minimum pullup resistor value for SDA and ALERT pins should be larger than 2 kΩ to reduce self-heating.",
+      "answer": "To reduce self-heating, use pullup resistors larger than 2 kΩ on SDA and ALERT pins",
       "cited_pages": [
         34
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.95
+      "seconds": 7.2
     },
     {
       "id": "t21",
@@ -631,21 +631,24 @@
       "retrieved_pages": [
         36,
         36,
-        6,
         35,
         33,
         37,
         39,
-        1
+        1,
+        34
       ],
       "hit": true,
-      "answered": false,
-      "correct": false,
-      "answer": "I could not find the answer in the selected documents.",
-      "cited_pages": [],
+      "answered": true,
+      "correct": true,
+      "answer": "The thermal pad should be left unsoldered for best measurement accuracy",
+      "cited_pages": [
+        35,
+        36
+      ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 9.0
+      "seconds": 6.84
     },
     {
       "id": "t22",
@@ -657,9 +660,9 @@
         33,
         37,
         36,
-        2,
         34,
-        6
+        24,
+        23
       ],
       "hit": true,
       "answered": false,
@@ -668,7 +671,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.23
+      "seconds": 6.75
     },
     {
       "id": "t23",
@@ -682,7 +685,7 @@
         10,
         6,
         14,
-        12
+        6
       ],
       "hit": true,
       "answered": true,
@@ -693,7 +696,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 6.88
+      "seconds": 7.0
     },
     {
       "id": "t24",
@@ -705,9 +708,9 @@
         6,
         35,
         7,
+        2,
         5,
-        12,
-        2
+        12
       ],
       "hit": true,
       "answered": true,
@@ -721,7 +724,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.55
+      "seconds": 9.86
     },
     {
       "id": "t25",
@@ -746,7 +749,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 3.78
+      "seconds": 3.73
     },
     {
       "id": "t26",
@@ -771,15 +774,15 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 4.05
+      "seconds": 4.24
     },
     {
       "id": "t27",
       "mode": "dense",
       "answerable": true,
       "retrieved_pages": [
-        30,
         18,
+        30,
         18,
         12,
         28,
@@ -788,13 +791,18 @@
         32
       ],
       "hit": false,
-      "answered": false,
+      "answered": true,
       "correct": false,
-      "answer": "I could not find the answer in the selected documents.",
-      "cited_pages": [],
+      "answer": "4 * 16 bita EEPROM-a je dostupno za opću namjenu",
+      "cited_pages": [
+        18,
+        30,
+        31,
+        32
+      ],
       "lang": "bs",
       "hit_at_k": false,
-      "seconds": 10.05
+      "seconds": 12.8
     },
     {
       "id": "t28",
@@ -819,7 +827,7 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 5.17
+      "seconds": 4.56
     },
     {
       "id": "t29",
@@ -842,7 +850,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 13.19
+      "seconds": 3.38
     },
     {
       "id": "t30",
@@ -865,7 +873,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 1.5
+      "seconds": 1.73
     },
     {
       "id": "t31",
@@ -877,8 +885,8 @@
         11,
         35,
         3,
-        22,
         33,
+        22,
         46
       ],
       "hit": false,
@@ -888,7 +896,7 @@
       "cited_pages": [],
       "lang": "bs",
       "hit_at_k": false,
-      "seconds": 3.0
+      "seconds": 3.19
     },
     {
       "id": "t32",
@@ -911,7 +919,7 @@
       "cited_pages": [],
       "lang": "bs",
       "hit_at_k": false,
-      "seconds": 10.5
+      "seconds": 9.33
     },
     {
       "id": "t01",
@@ -928,16 +936,13 @@
         1
       ],
       "hit": true,
-      "answered": true,
-      "correct": true,
-      "answer": "The supply voltage range of the TMP117 is 1.7 V to 5.5 V",
-      "cited_pages": [
-        35,
-        5
-      ],
+      "answered": false,
+      "correct": false,
+      "answer": "I could not find the answer in the selected documents.",
+      "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.62
+      "seconds": 6.81
     },
     {
       "id": "t02",
@@ -948,48 +953,49 @@
         1,
         6,
         2,
-        2,
         7,
         34,
-        49
+        49,
+        2
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The accuracy from –20 °C to 50 °C is ±0.1 °C",
+      "answer": "The accuracy from –20 °C to 50 °C is ±0.1 °C (maximum).",
       "cited_pages": [
         1,
         6
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 8.59
+      "seconds": 7.2
     },
     {
       "id": "t03",
       "mode": "bm25",
       "answerable": true,
       "retrieved_pages": [
-        31,
+        6,
         1,
+        6,
+        31,
         39,
         13,
         13,
-        33,
-        7,
-        6
+        33
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "0.0078 °C",
+      "answer": "Rezolucija mjerenja temperature je 0.0078 °C; 7.8125 m°C",
       "cited_pages": [
         1,
+        6,
         13
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 8.45
+      "seconds": 10.91
     },
     {
       "id": "t04",
@@ -1002,17 +1008,19 @@
         18,
         12,
         3,
-        2,
+        34,
         10
       ],
       "hit": true,
-      "answered": false,
-      "correct": false,
-      "answer": "I could not find the answer in the selected documents.",
-      "cited_pages": [],
+      "answered": true,
+      "correct": true,
+      "answer": "The device typically consumes 3.5 μA",
+      "cited_pages": [
+        1
+      ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 9.09
+      "seconds": 3.7
     },
     {
       "id": "t05",
@@ -1022,22 +1030,23 @@
         20,
         2,
         39,
-        3,
         1,
-        2,
-        14,
-        34
+        34,
+        3,
+        15,
+        14
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "TMP117 može podržati do četiri uređaja na jednoj I2C sabirnici",
+      "answer": "TMP117 može podržati do četiri uređaja na jednoj I2C sabirnici.",
       "cited_pages": [
-        1
+        1,
+        15
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 6.86
+      "seconds": 6.33
     },
     {
       "id": "t06",
@@ -1051,19 +1060,19 @@
         5,
         5,
         17,
-        23
+        6
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The recommended value for the SDA and ALERT pullup resistors is 5 kΩ\nPullup resistors larger than 2 kΩ are recommended for SDA and ALERT pins",
+      "answer": "The recommended value for the pullup resistors on SDA and ALERT is 5 kΩ\nPullup resistors on SDA and ALERT should be larger than 2 kΩ",
       "cited_pages": [
         33,
         34
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.61
+      "seconds": 8.09
     },
     {
       "id": "t07",
@@ -1075,8 +1084,8 @@
         33,
         34,
         2,
-        5,
         2,
+        5,
         34
       ],
       "hit": true,
@@ -1089,7 +1098,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.81
+      "seconds": 5.72
     },
     {
       "id": "t08",
@@ -1097,8 +1106,8 @@
       "answerable": true,
       "retrieved_pages": [
         5,
-        2,
         5,
+        2,
         2,
         34,
         1,
@@ -1114,7 +1123,7 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 6.95
+      "seconds": 6.25
     },
     {
       "id": "t09",
@@ -1137,7 +1146,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 1.7
+      "seconds": 1.66
     },
     {
       "id": "t10",
@@ -1145,13 +1154,13 @@
       "answerable": false,
       "retrieved_pages": [
         7,
-        6,
         20,
         22,
-        22,
-        4,
+        6,
+        6,
         5,
-        1
+        1,
+        4
       ],
       "hit": false,
       "answered": false,
@@ -1160,7 +1169,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 2.25
+      "seconds": 2.19
     },
     {
       "id": "t11",
@@ -1185,7 +1194,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.58
+      "seconds": 5.97
     },
     {
       "id": "t12",
@@ -1196,10 +1205,10 @@
         33,
         1,
         1,
+        2,
         35,
         15,
-        12,
-        2
+        12
       ],
       "hit": true,
       "answered": true,
@@ -1211,7 +1220,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.8
+      "seconds": 4.78
     },
     {
       "id": "t13",
@@ -1221,24 +1230,22 @@
         14,
         3,
         6,
+        6,
         10,
-        1,
         12,
         14,
-        2
+        1
       ],
       "hit": true,
       "answered": true,
       "correct": true,
       "answer": "The typical shutdown current is 150 nA",
       "cited_pages": [
-        3,
-        6,
-        1
+        3
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 8.56
+      "seconds": 8.69
     },
     {
       "id": "t14",
@@ -1252,18 +1259,16 @@
         6,
         7,
         7,
-        2
+        14
       ],
       "hit": true,
-      "answered": true,
-      "correct": true,
-      "answer": "A single temperature conversion typically takes 15.5 ms",
-      "cited_pages": [
-        6
-      ],
+      "answered": false,
+      "correct": false,
+      "answer": "I could not find the answer in the selected documents.",
+      "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.81
+      "seconds": 5.19
     },
     {
       "id": "t15",
@@ -1282,14 +1287,14 @@
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "135 μA",
+      "answer": "The quiescent current during active conversion is 135 µA",
       "cited_pages": [
-        14,
-        6
+        6,
+        14
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.81
+      "seconds": 6.09
     },
     {
       "id": "t16",
@@ -1298,9 +1303,9 @@
       "retrieved_pages": [
         14,
         12,
-        6,
         34,
         12,
+        6,
         14,
         34,
         15
@@ -1308,13 +1313,14 @@
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The typical standby current is 1.25 μA when the serial bus is inactive and the device is at 25 °C.",
+      "answer": "The typical standby current is 1.25 μA",
       "cited_pages": [
+        14,
         6
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.59
+      "seconds": 5.58
     },
     {
       "id": "t17",
@@ -1322,13 +1328,13 @@
       "answerable": true,
       "retrieved_pages": [
         7,
-        6,
         20,
+        6,
+        6,
         22,
         22,
         4,
-        7,
-        5
+        7
       ],
       "hit": true,
       "answered": true,
@@ -1339,7 +1345,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 3.59
+      "seconds": 3.84
     },
     {
       "id": "t18",
@@ -1347,24 +1353,24 @@
       "answerable": true,
       "retrieved_pages": [
         12,
-        2,
         35,
         7,
-        2,
         1,
+        2,
+        6,
         34,
-        6
+        2
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The device requires 1.5 ms to power up after the supply reaches the operating range before conversions can begin.",
+      "answer": "The device requires 1.5 ms to power up after the supply reaches the operating range",
       "cited_pages": [
         12
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.92
+      "seconds": 4.0
     },
     {
       "id": "t19",
@@ -1387,7 +1393,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 8.61
+      "seconds": 7.94
     },
     {
       "id": "t20",
@@ -1423,10 +1429,10 @@
         36,
         36,
         6,
-        6,
-        2,
         1,
-        39
+        39,
+        34,
+        34
       ],
       "hit": true,
       "answered": false,
@@ -1435,7 +1441,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 19.77
+      "seconds": 11.78
     },
     {
       "id": "t22",
@@ -1448,7 +1454,7 @@
         34,
         34,
         36,
-        6,
+        2,
         37
       ],
       "hit": true,
@@ -1458,7 +1464,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 6.7
+      "seconds": 5.66
     },
     {
       "id": "t23",
@@ -1469,21 +1475,21 @@
         34,
         35,
         6,
-        6,
         18,
         14,
+        10,
         1
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "Self-heating in still air is approximately 40 m°C in continuous conversion mode at 3.3 V and 25 °C.",
+      "answer": "The self-heating in still air in continuous conversion mode at 3.3 V and 25 °C is approximately 40 m°C",
       "cited_pages": [
         34
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.39
+      "seconds": 7.03
     },
     {
       "id": "t24",
@@ -1494,10 +1500,10 @@
         7,
         1,
         34,
-        6,
         7,
         6,
-        5
+        5,
+        6
       ],
       "hit": true,
       "answered": true,
@@ -1510,7 +1516,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 9.03
+      "seconds": 8.91
     },
     {
       "id": "t25",
@@ -1533,7 +1539,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 11.39
+      "seconds": 10.42
     },
     {
       "id": "t26",
@@ -1546,7 +1552,7 @@
         30,
         19,
         27,
-        15,
+        6,
         28
       ],
       "hit": true,
@@ -1558,7 +1564,7 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 4.52
+      "seconds": 4.94
     },
     {
       "id": "t27",
@@ -1583,33 +1589,33 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 6.19
+      "seconds": 6.61
     },
     {
       "id": "t28",
       "mode": "bm25",
       "answerable": true,
       "retrieved_pages": [
+        6,
         1,
-        6,
-        6,
         7,
         1,
         5,
         7,
-        35
+        35,
+        13
       ],
       "hit": true,
       "answered": true,
-      "correct": false,
-      "answer": "±0.1 °C (maximum)",
+      "correct": true,
+      "answer": "±0.2 °C (maximum) od -40 °C do 100 °C",
       "cited_pages": [
         1,
         6
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 7.16
+      "seconds": 6.77
     },
     {
       "id": "t29",
@@ -1622,7 +1628,7 @@
         36,
         39,
         36,
-        6,
+        2,
         1
       ],
       "hit": false,
@@ -1632,7 +1638,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 17.2
+      "seconds": 1.95
     },
     {
       "id": "t30",
@@ -1646,7 +1652,7 @@
         21,
         1,
         21,
-        6
+        15
       ],
       "hit": false,
       "answered": false,
@@ -1655,7 +1661,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 1.83
+      "seconds": 1.38
     },
     {
       "id": "t31",
@@ -1663,13 +1669,13 @@
       "answerable": false,
       "retrieved_pages": [
         13,
+        2,
         6,
         5,
-        2,
-        50,
         7,
         1,
-        50
+        50,
+        11
       ],
       "hit": false,
       "answered": false,
@@ -1678,7 +1684,7 @@
       "cited_pages": [],
       "lang": "bs",
       "hit_at_k": false,
-      "seconds": 3.48
+      "seconds": 3.0
     },
     {
       "id": "t32",
@@ -1701,7 +1707,7 @@
       "cited_pages": [],
       "lang": "bs",
       "hit_at_k": false,
-      "seconds": 7.2
+      "seconds": 7.16
     },
     {
       "id": "t01",
@@ -1715,19 +1721,19 @@
         12,
         11,
         34,
-        33
+        34
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The supply voltage range of the TMP117 is 1.7 V to 5.5 V for temperatures from -55 °C to 70 °C; 1.8 V to 5.5 V for temperatures from -55 °C to 150 °C",
+      "answer": "The supply voltage range of the TMP117 is 1.7 V to 5.5 V",
       "cited_pages": [
         35,
         1
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 9.31
+      "seconds": 6.98
     },
     {
       "id": "t02",
@@ -1736,24 +1742,24 @@
       "retrieved_pages": [
         1,
         1,
-        2,
         6,
         6,
-        2,
         7,
-        39
+        2,
+        34,
+        5
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The accuracy from –20 °C to 50 °C is ±0.05 °C (typical) with a maximum of ±0.1 °C",
+      "answer": "The accuracy from –20 °C to 50 °C is ±0.1 °C",
       "cited_pages": [
         1,
         6
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 8.3
+      "seconds": 7.23
     },
     {
       "id": "t03",
@@ -1761,25 +1767,24 @@
       "answerable": true,
       "retrieved_pages": [
         13,
-        31,
         1,
+        31,
+        6,
         13,
         1,
-        39,
-        7,
-        34
+        6,
+        39
       ],
       "hit": true,
       "answered": true,
       "correct": true,
       "answer": "0.0078 °C",
       "cited_pages": [
-        1,
-        13
+        1
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 8.2
+      "seconds": 13.89
     },
     {
       "id": "t04",
@@ -1790,22 +1795,22 @@
         12,
         14,
         34,
-        12,
         34,
+        12,
         1,
         18
       ],
       "hit": false,
       "answered": true,
       "correct": true,
-      "answer": "The device typically consumes 250 nA in shutdown mode (SD); 135 µA during active conversion and 1.25 µA during low-power standby in continuous conversion mode (CC); 3.5 µA.",
+      "answer": "The device typically consumes 250 nA in shutdown mode (SD); 135 µA during active conversion and 1.25 µA during low-power standby; 3.5 μA.",
       "cited_pages": [
         14,
         1
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.81
+      "seconds": 7.33
     },
     {
       "id": "t05",
@@ -1817,20 +1822,20 @@
         21,
         2,
         39,
-        22,
         21,
-        2
+        22,
+        34
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "Uređaja može biti do 4 na jednoj I2C sabirnici",
+      "answer": "4",
       "cited_pages": [
         21
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 8.28
+      "seconds": 5.98
     },
     {
       "id": "t06",
@@ -1838,25 +1843,25 @@
       "answerable": true,
       "retrieved_pages": [
         33,
-        4,
         34,
+        4,
         16,
-        5,
         17,
+        5,
         36,
         5
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The recommended value for the pullup resistors on SDA and ALERT is 5 kΩ",
+      "answer": "The recommended value for the pullup resistors on SDA and ALERT is 5 kΩ\nIn some applications, the pullup resistor can be lower or higher than 5 kΩ\nPullup resistors larger than 2 kΩ are recommended for SDA and ALERT",
       "cited_pages": [
         33,
-        4
+        34
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 6.09
+      "seconds": 9.73
     },
     {
       "id": "t07",
@@ -1869,8 +1874,8 @@
         34,
         2,
         5,
-        6,
-        2
+        2,
+        7
       ],
       "hit": true,
       "answered": true,
@@ -1882,7 +1887,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.02
+      "seconds": 6.88
     },
     {
       "id": "t08",
@@ -1893,10 +1898,10 @@
         5,
         35,
         2,
-        2,
         10,
-        6,
-        34
+        2,
+        34,
+        7
       ],
       "hit": true,
       "answered": true,
@@ -1907,7 +1912,7 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 6.02
+      "seconds": 5.05
     },
     {
       "id": "t09",
@@ -1917,11 +1922,11 @@
         1,
         50,
         11,
-        1,
         50,
+        1,
         22,
         33,
-        33
+        22
       ],
       "hit": false,
       "answered": false,
@@ -1930,7 +1935,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 1.95
+      "seconds": 3.38
     },
     {
       "id": "t10",
@@ -1938,11 +1943,11 @@
       "answerable": false,
       "retrieved_pages": [
         7,
-        22,
-        6,
         20,
         22,
+        22,
         1,
+        6,
         20,
         33
       ],
@@ -1953,7 +1958,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 2.41
+      "seconds": 3.81
     },
     {
       "id": "t11",
@@ -1964,8 +1969,8 @@
         5,
         1,
         29,
-        31,
         29,
+        31,
         13,
         7
       ],
@@ -1978,7 +1983,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.16
+      "seconds": 3.92
     },
     {
       "id": "t12",
@@ -1989,8 +1994,8 @@
         1,
         1,
         33,
-        35,
         15,
+        35,
         33,
         14
       ],
@@ -2004,7 +2009,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 6.28
+      "seconds": 5.61
     },
     {
       "id": "t13",
@@ -2012,24 +2017,26 @@
       "answerable": true,
       "retrieved_pages": [
         14,
-        6,
         10,
+        6,
         3,
+        6,
         12,
         34,
-        12,
-        1
+        12
       ],
       "hit": true,
       "answered": true,
-      "correct": false,
-      "answer": "The typical shutdown current is 0.5 μA at 25 °C with serial bus inactive, SCL, SDA, and ADD0 = V+.",
+      "correct": true,
+      "answer": "The typical shutdown current is 250 nA; 150 nA; 0.15 μA at 25 °C",
       "cited_pages": [
+        14,
+        3,
         6
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 6.14
+      "seconds": 7.52
     },
     {
       "id": "t14",
@@ -2040,10 +2047,10 @@
         34,
         12,
         18,
-        14,
         15,
+        14,
         7,
-        1
+        6
       ],
       "hit": true,
       "answered": false,
@@ -2052,32 +2059,33 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 5.41
+      "seconds": 1.91
     },
     {
       "id": "t15",
       "mode": "hybrid",
       "answerable": true,
       "retrieved_pages": [
-        14,
-        6,
-        12,
         6,
         14,
         12,
+        6,
+        14,
         7,
+        12,
         34
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "135 μA",
+      "answer": "The quiescent current during active conversion is 135 µA",
       "cited_pages": [
-        6
+        6,
+        14
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.7
+      "seconds": 12.95
     },
     {
       "id": "t16",
@@ -2096,14 +2104,14 @@
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The typical standby current between conversions is 1.25 μA",
+      "answer": "The typical standby current is 1.25 μA",
       "cited_pages": [
         14,
         6
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.38
+      "seconds": 5.92
     },
     {
       "id": "t17",
@@ -2111,13 +2119,13 @@
       "answerable": true,
       "retrieved_pages": [
         7,
-        6,
         20,
-        22,
         33,
         22,
-        7,
-        5
+        6,
+        22,
+        6,
+        7
       ],
       "hit": true,
       "answered": true,
@@ -2128,7 +2136,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.48
+      "seconds": 3.88
     },
     {
       "id": "t18",
@@ -2137,23 +2145,23 @@
       "retrieved_pages": [
         12,
         35,
-        2,
         7,
         18,
         34,
         2,
-        34
+        1,
+        14
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The device requires 1.5 ms to power up after the supply reaches the operating range before conversions can begin.",
+      "answer": "The device requires 1.5 ms to power up after the supply reaches the operating range.",
       "cited_pages": [
         12
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 4.94
+      "seconds": 3.78
     },
     {
       "id": "t19",
@@ -2176,7 +2184,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.88
+      "seconds": 7.22
     },
     {
       "id": "t20",
@@ -2195,7 +2203,7 @@
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The minimum pullup resistor value for SDA and ALERT is 2 kΩ",
+      "answer": "The minimum pullup resistor value for SDA and ALERT is 2 kΩ or larger",
       "cited_pages": [
         34,
         33,
@@ -2203,7 +2211,7 @@
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 6.98
+      "seconds": 6.86
     },
     {
       "id": "t21",
@@ -2213,23 +2221,20 @@
         36,
         35,
         36,
-        6,
-        6,
         1,
+        6,
         39,
+        34,
         33
       ],
       "hit": true,
-      "answered": true,
-      "correct": true,
-      "answer": "For best measurement accuracy, the thermal pad should not be soldered to the PCB.",
-      "cited_pages": [
-        35,
-        36
-      ],
+      "answered": false,
+      "correct": false,
+      "answer": "I could not find the answer in the selected documents.",
+      "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.58
+      "seconds": 6.72
     },
     {
       "id": "t22",
@@ -2242,7 +2247,7 @@
         34,
         37,
         36,
-        6,
+        34,
         2
       ],
       "hit": true,
@@ -2252,7 +2257,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.58
+      "seconds": 5.45
     },
     {
       "id": "t23",
@@ -2264,20 +2269,20 @@
         35,
         6,
         10,
-        6,
         14,
-        8
+        8,
+        6
       ],
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "The self-heating in still air in continuous conversion mode at 3.3 V and 25 °C is approximately 40 m°C",
+      "answer": "Self-heating in still air is approximately 40 m°C in continuous conversion mode at 3.3 V and 25 °C.",
       "cited_pages": [
         34
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.56
+      "seconds": 6.53
     },
     {
       "id": "t24",
@@ -2299,12 +2304,12 @@
       "answer": "1.8 V to 5.5 V",
       "cited_pages": [
         1,
-        5,
-        6
+        6,
+        7
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 7.14
+      "seconds": 7.48
     },
     {
       "id": "t25",
@@ -2327,11 +2332,11 @@
       "cited_pages": [
         12,
         27,
-        14
+        28
       ],
       "lang": "en",
       "hit_at_k": true,
-      "seconds": 6.66
+      "seconds": 6.03
     },
     {
       "id": "t26",
@@ -2356,7 +2361,7 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 4.38
+      "seconds": 4.27
     },
     {
       "id": "t27",
@@ -2375,13 +2380,15 @@
       "hit": true,
       "answered": true,
       "correct": true,
-      "answer": "48 bita EEPROM-a je dostupno za opću namjenu",
+      "answer": "4 * 16 bita\n48 bita",
       "cited_pages": [
+        18,
+        30,
         1
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 6.94
+      "seconds": 6.33
     },
     {
       "id": "t28",
@@ -2394,8 +2401,8 @@
         7,
         6,
         7,
-        39,
-        2
+        5,
+        39
       ],
       "hit": true,
       "answered": true,
@@ -2407,7 +2414,7 @@
       ],
       "lang": "bs",
       "hit_at_k": true,
-      "seconds": 6.83
+      "seconds": 5.84
     },
     {
       "id": "t29",
@@ -2421,7 +2428,7 @@
         39,
         36,
         11,
-        6
+        34
       ],
       "hit": false,
       "answered": false,
@@ -2430,7 +2437,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 3.67
+      "seconds": 3.22
     },
     {
       "id": "t30",
@@ -2453,7 +2460,7 @@
       "cited_pages": [],
       "lang": "en",
       "hit_at_k": false,
-      "seconds": 1.42
+      "seconds": 1.44
     },
     {
       "id": "t31",
@@ -2463,9 +2470,9 @@
         1,
         13,
         1,
+        2,
         11,
         6,
-        5,
         22,
         35
       ],
@@ -2476,7 +2483,7 @@
       "cited_pages": [],
       "lang": "bs",
       "hit_at_k": false,
-      "seconds": 2.92
+      "seconds": 2.91
     },
     {
       "id": "t32",
@@ -2502,7 +2509,7 @@
       ],
       "lang": "bs",
       "hit_at_k": false,
-      "seconds": 9.34
+      "seconds": 9.28
     }
   ]
 }

@@ -199,7 +199,11 @@ If port 8080 is already in use, start with another one, for example
 
 The first upload downloads the Docling layout models and the embedding models (about
 2.5 GB in total) into the `reqtrace_data` volume, so it takes several minutes and needs
-internet access. Later uploads of a short datasheet take about 30 seconds on a CPU.
+internet access. Later uploads of a short datasheet take about 30 seconds on a CPU, and
+the 50-page TMP117 datasheet about 2.5 minutes (see [Performance](#performance)). A PDF
+that was uploaded before, for example into a second drawer, is not parsed again.
+
+GPU parsing and embedding inside Docker is optional; see [Performance](#performance).
 
 ### Without Docker (development)
 
@@ -231,7 +235,13 @@ All settings are environment variables (or a `.env` file; see `.env.example`).
 | `DENSE_MODEL` | `intfloat/multilingual-e5-large` | FastEmbed dense model |
 | `DENSE_QUERY_PREFIX` / `DENSE_PASSAGE_PREFIX` | `query: ` / `passage: ` | E5 prefixes; empty for other models |
 | `SPARSE_MODEL` | `Qdrant/bm25` | Sparse model |
-| `EMBEDDING_THREADS` | all cores | CPU threads for embeddings |
+| `EMBEDDING_THREADS` | all logical cores | CPU threads for the dense model |
+| `EMBEDDING_BATCH_SIZE` | `1` | Chunks per embedding call at ingestion: `1` is fastest on a CPU, `16` on a GPU |
+| `EMBEDDING_DEVICE` | `cpu` | `cuda` embeds on an NVIDIA GPU (needs `onnxruntime-gpu`, as in the GPU image); falls back to the CPU |
+| `PARSE_THREADS` | `0` | Docling threads; `0` = one per logical core |
+| `PARSE_TABLE_MODE` | `fast` | Docling table structure model: `fast` or `accurate` (slower, more exact on complex tables) |
+| `PARSE_DEVICE` | `cpu` | `cuda` or `auto` runs Docling's layout and table models on an NVIDIA GPU; falls back to the CPU |
+| `PARSE_CACHE` | `true` | Reuse the parsed result of a PDF with the same content; stored in `DATA_DIR/cache/parsed`, safe to delete |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama (Docker: `http://host.docker.internal:11434`) |
 | `LLM_MODEL` | `qwen3:4b` | Ollama model tag |
 | `LLM_NUM_CTX` | `8192` | Context window |
@@ -258,6 +268,74 @@ All settings are environment variables (or a `.env` file; see `.env.example`).
 | `EXTRACTION_CONCURRENCY` | `1` | Parallel model calls; only useful when Ollama has parallel slots that fit in VRAM |
 | `DEDUP_THRESHOLD` | `92` | Similarity above which requirements are merged |
 | `CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed browser origins |
+
+## Performance
+
+Ingestion of the 50-page TMP117 datasheet (median of three runs, models already loaded,
+parse cache off). Machine: Windows 11, AMD Ryzen 5 5500 (6 cores, 12 threads), 16 GB RAM,
+NVIDIA RTX 3050 6 GB; Docker Desktop with WSL2 (12 CPUs, 8 GB). Before: the code of
+`main` on 2026-11-24; after: the current defaults.
+
+| | Parsing | Dense embedding | Sparse, chunking, upsert | Total | Change |
+|---|---|---|---|---|---|
+| Docker, before | 191.5 s | 154.3 s | 0.3 s | 345.0 s | |
+| Docker, after | 85.9 s | 50.8 s | 0.4 s | 136.9 s | −60% |
+| Windows host, before | 210.6 s | 186.6 s | 0.4 s | 397.6 s | |
+| Windows host, after | 84.6 s | 62.2 s | 0.5 s | 145.5 s | −63% |
+| Windows host, after, `PARSE_DEVICE=cuda` | 23.1 s | 68.3 s | 0.4 s | 91.1 s | −77% |
+| Windows host, after, parsing and embedding on the GPU | 45.0 s | 7.4 s | 0.3 s | 52.6 s | −87% |
+| Same PDF again (parse cache hit), host | 0.0 s | 62.0 s | 0.3 s | 62.3 s | |
+
+With the optional GPU image (`docker-compose.gpu.yml`, parsing on the GPU, embedding on
+the CPU), Docker took 86.3 s (parsing 23.0 s, dense embedding 61.2 s), −75%.
+
+What made the difference, on the CPU:
+
+- **Table structure is most of the parsing time.** Docling's TableFormer took 215 of the
+  222 s on the host. Its `fast` mode cut parsing to about 80 s. On TMP117 every row of the
+  ratings tables is read identically in both modes, and the benchmark's retrieval, answer
+  and extraction numbers did not drop (see below). `PARSE_TABLE_MODE=accurate` switches
+  back.
+- **Embedding without padding.** The model pads every text of a batch to the longest one,
+  so batches that mix a heading with a full table waste most of the work. One chunk per
+  call (and length-sorted batches when `EMBEDDING_BATCH_SIZE` is raised) gives identical
+  vectors in a third of the time.
+- **All cores.** Docling used 4 threads and ONNX Runtime fewer threads than cores by
+  default; both now use every logical core.
+- **Same PDF, no second parse.** The parsed result is cached by content hash, so uploading
+  a datasheet into another drawer only embeds it.
+
+Tried and not kept: larger page and model batch sizes in Docling (no gain), and
+overlapping parsing with embedding (both already use all cores; together they took
+205.8 s against 205.9 s one after the other).
+
+Quality on the TMP117 benchmark, before and after: retrieval hit rate @8 92 / 100 / 100%
+(dense / bm25 / hybrid) both times; answer accuracy 73 / 73 / 85% before and
+81 / 73 / 85% after; refusal accuracy unchanged; extraction 67 rows, precision 100%,
+recall 97%, all 8 ratings-table limits, both times.
+
+**GPU on a 6 GB card shared with Ollama.** `qwen3:4b` takes 3.9 GB and the Windows desktop
+about 1 GB, so little is left. With `PARSE_DEVICE=cuda` the parser keeps about 1 GB of
+VRAM while the API runs. Ollama still loaded the model fully on the GPU; it generated at
+full speed with the Docker GPU image (49 tokens/s) but about 20% slower in one test on
+the host (39 instead of 49 tokens/s). With the embedding model on the
+GPU as well, the two together need more memory than is free, and the Windows driver can
+silently move GPU memory into system RAM. The defaults therefore keep both on the CPU,
+and `ollama ps` stays at `100% GPU`. On a card with at least 2–3 GB free next to the LLM,
+`PARSE_DEVICE=cuda` (and `EMBEDDING_DEVICE=cuda` with `EMBEDDING_BATCH_SIZE=16`) is
+worth it.
+
+**GPU in Docker** needs Docker Desktop with WSL2 (Windows) or the NVIDIA Container Toolkit
+(Linux). It is optional; the default compose file needs no GPU:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+# PARSE_DEVICE=cuda by default there; add EMBEDDING_DEVICE=cuda EMBEDDING_BATCH_SIZE=16
+# only when the GPU has room for both next to the LLM.
+```
+
+The GPU image installs the CUDA builds of PyTorch and ONNX Runtime and is several GB
+larger. To measure your own machine: `python -m eval.bench_ingestion --pdf <file> --runs 3`.
 
 ## API overview
 
@@ -545,6 +623,10 @@ normal server, so extraction stays sequential (`EXTRACTION_CONCURRENCY=1`).
   (18 instead of 22 chunks for the test document). Page citations are unaffected because
   chunks never span pages, but section paths in prompts are less precise. The evaluation
   numbers above come from the Windows host run.
+- **Fast table mode trades some table detail for speed.** On TMP117 the ratings tables
+  are read identically and the benchmark did not drop, but other tables (register maps,
+  packaging) come out differently; set `PARSE_TABLE_MODE=accurate` for documents whose
+  complex tables matter more than upload time.
 - **Small-model limits.** `qwen3:4b` sometimes misses rows or facts in long tables, and
   results can vary between runs.
 - **One real document so far.** The real benchmark covers one datasheet (TMP117); other

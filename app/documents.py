@@ -7,6 +7,7 @@ requirements), the vectors in Qdrant and the stored PDF.
 import logging
 import time
 import uuid
+from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import Document, DocumentStatus, Drawer, session_scope, utcnow
+from app.embeddings import EmbeddedText
 from app.errors import (
     BadRequestError,
     ConflictError,
@@ -32,7 +34,7 @@ from app.vector_store import ChunkPayload, VectorStoreUnavailableError
 logger = logging.getLogger(__name__)
 
 READ_BLOCK = 1024 * 1024
-EMBED_BATCH = 16
+UPSERT_BATCH = 256
 
 
 def _get_drawer(session: Session, drawer_id: int) -> Drawer:
@@ -266,15 +268,44 @@ def warm_up(services: Services) -> None:
     logger.info("Models loaded in %.1f s", time.monotonic() - started)
 
 
+@dataclass
+class IngestTimings:
+    """Seconds per ingestion phase, for the log and the ingestion benchmark."""
+
+    chunks: int = 0
+    pages: int = 0
+    parse: float = 0.0
+    chunking: float = 0.0
+    dense: float = 0.0
+    sparse: float = 0.0
+    upsert: float = 0.0
+    total: float = 0.0
+
+    def line(self) -> str:
+        return (
+            f"parse {self.parse:.1f} s ({self.pages} pages), chunking and filtering "
+            f"{self.chunking:.1f} s, dense embedding {self.dense:.1f} s, sparse embedding "
+            f"{self.sparse:.1f} s ({self.chunks} chunks), upsert {self.upsert:.1f} s, "
+            f"total {self.total:.1f} s"
+        )
+
+
 def _index_document(services: Services, doc_id: int, drawer_id: int, filename: str) -> int:
+    return index_document(services, doc_id, drawer_id, filename).chunks
+
+
+def index_document(services: Services, doc_id: int, drawer_id: int, filename: str) -> IngestTimings:
+    """Parse, filter, chunk, embed and upsert one stored PDF; returns the phase timings."""
     settings = services.settings
+    timings = IngestTimings()
     started = time.monotonic()
     blocks = services.parser(
         file_path(services, doc_id),
         on_page=lambda done, _total: _record_pages(services, doc_id, done),
     )
     parsed = time.monotonic()
-    pages = max((block.page for block in blocks), default=0)
+    timings.parse = parsed - started
+    timings.pages = max((block.page for block in blocks), default=0)
     _record_pages(services, doc_id, None)
     noise = filter_noise(
         blocks,
@@ -293,45 +324,57 @@ def _index_document(services: Services, doc_id: int, drawer_id: int, filename: s
     chunks = unique_chunks(
         chunk_blocks(noise.blocks, settings.chunk_max_chars, settings.chunk_overlap_chars)
     )
+    timings.chunking = time.monotonic() - parsed
+    timings.chunks = len(chunks)
     if not chunks:
         raise IngestionError(
             "No extractable text was found. The PDF is probably scanned; OCR is not supported."
         )
     services.store.ensure_collection(services.embedder.dense_size)
-    embed_seconds = upsert_seconds = 0.0
-    for start in range(0, len(chunks), EMBED_BATCH):
-        batch = chunks[start : start + EMBED_BATCH]
+    model_timings = getattr(services.embedder, "timings", None)
+    if model_timings is not None:
+        model_timings.dense = model_timings.sparse = 0.0
+    # Embed in batches of similar length: the model pads every text of a batch to the
+    # longest one, so mixing a short heading with a full table wastes most of the work.
+    # Chunk indexes stay in document order.
+    order = sorted(range(len(chunks)), key=lambda i: len(chunks[i].embedding_text))
+    vectors: list[EmbeddedText | None] = [None] * len(chunks)
+    embed_seconds = 0.0
+    batch_size = settings.embedding_batch_size
+    for start in range(0, len(order), batch_size):
+        indexes = order[start : start + batch_size]
         step = time.monotonic()
-        vectors = services.embedder.embed_passages([c.embedding_text for c in batch])
+        embedded = services.embedder.embed_passages([chunks[i].embedding_text for i in indexes])
         embed_seconds += time.monotonic() - step
-        payloads = [
-            ChunkPayload(
-                doc_id=doc_id,
-                drawer_id=drawer_id,
-                filename=filename,
-                page=chunk.page,
-                section=chunk.section,
-                kind=chunk.kind,
-                text=chunk.text,
-                chunk_index=start + offset,
-            )
-            for offset, chunk in enumerate(batch)
-        ]
-        step = time.monotonic()
-        services.store.upsert(payloads, vectors)
-        upsert_seconds += time.monotonic() - step
-    logger.info(
-        "Document %d timing: parse %.1f s (%d pages), embed %.1f s (%d chunks), "
-        "upsert %.1f s, total %.1f s",
-        doc_id,
-        parsed - started,
-        pages,
-        embed_seconds,
-        len(chunks),
-        upsert_seconds,
-        time.monotonic() - started,
-    )
-    return len(chunks)
+        for index, vector in zip(indexes, embedded, strict=True):
+            vectors[index] = vector
+    payloads = [
+        ChunkPayload(
+            doc_id=doc_id,
+            drawer_id=drawer_id,
+            filename=filename,
+            page=chunk.page,
+            section=chunk.section,
+            kind=chunk.kind,
+            text=chunk.text,
+            chunk_index=index,
+        )
+        for index, chunk in enumerate(chunks)
+    ]
+    step = time.monotonic()
+    for start in range(0, len(chunks), UPSERT_BATCH):
+        services.store.upsert(
+            payloads[start : start + UPSERT_BATCH],
+            [v for v in vectors[start : start + UPSERT_BATCH] if v is not None],
+        )
+    timings.upsert = time.monotonic() - step
+    if model_timings is not None:
+        timings.dense, timings.sparse = model_timings.dense, model_timings.sparse
+    else:
+        timings.dense = embed_seconds
+    timings.total = time.monotonic() - started
+    logger.info("Document %d timing: %s", doc_id, timings.line())
+    return timings
 
 
 def _finish_ingestion(services: Services, doc_id: int, status: str, error: str | None) -> bool:
