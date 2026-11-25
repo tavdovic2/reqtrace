@@ -1,4 +1,5 @@
 import re
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from app.qa import (
 )
 from app.retrieval import retrieve
 from app.services import Services
+from app.vector_store import ScoredChunk
 from tests.conftest import FakeLLM, make_pdf, upload
 
 
@@ -485,3 +487,52 @@ def test_same_pdf_in_two_drawers_fills_the_context_with_distinct_chunks(
         per_page[key] = per_page.get(key, 0) + 1
     assert max(per_page.values()) <= services.settings.retrieval_max_per_page
     assert len({c.point_id for c in chunks}) == len(chunks)
+
+
+def test_source_carries_every_evidence_passage_of_its_page(
+    client: TestClient, fake_llm: FakeLLM, two_drawers: dict[str, int]
+) -> None:
+    def reply(prompt: str) -> CitedAnswer:
+        number = _excerpt_number(prompt, "85 C")
+        return answer(
+            ("It is 85 C.", [number]),
+            ("The supply must stay below 3.6 V.", [number]),
+            evidence=[
+                (number, "The maximum operating temperature is 85 C."),
+                (number, "The supply voltage shall not exceed 3.6 V."),
+                (number, "This sentence is not on the page at all."),
+            ],
+        )
+
+    fake_llm.structured_replies.append(reply)
+    body = client.post("/ask", json={"question": QUESTION, "drawer_id": two_drawers["sensors"]})
+    source = body.json()["sources"][0]
+    assert source["highlights"] == [
+        "The maximum operating temperature is 85 C.",
+        "The supply voltage shall not exceed 3.6 V.",
+    ]
+    assert source["highlight"] == source["highlights"][0]
+
+
+def test_two_cited_chunks_of_one_page_give_one_source_with_both_passages() -> None:
+    from app.qa import build_sources
+
+    first, second = _chunks("Use a 100-nF capacitor.", "Place it near the V+ pin.")
+    chunks = [first, ScoredChunk(replace(second.payload, page=first.payload.page), 0.5)]
+    claims = [Claim(statement="A 100-nF capacitor near V+.", excerpts=[1, 2])]
+    evidence = [
+        Evidence(excerpt=1, quote="Use a 100-nF capacitor."),
+        Evidence(excerpt=2, quote="Place it near the V+ pin."),
+    ]
+    sources = build_sources(chunks, claims, evidence, lambda _chunk, quotes: list(quotes))
+    assert len(sources) == 1
+    assert sources[0].highlights == ["Use a 100-nF capacitor.", "Place it near the V+ pin."]
+
+
+def test_source_without_located_evidence_has_no_highlights() -> None:
+    from app.qa import build_sources
+
+    chunks = _chunks("Use a 100-nF capacitor.")
+    claims = [Claim(statement="A 100-nF capacitor.", excerpts=[1])]
+    sources = build_sources(chunks, claims, [], lambda _chunk, _quotes: [])
+    assert (sources[0].highlights, sources[0].highlight) == ([], None)
