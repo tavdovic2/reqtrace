@@ -29,6 +29,8 @@ requirements.py  planning, grouped model calls, verification, deduplication, sto
 review.py        human review (status, edited text, note, bulk), counts, merging a new
                  extraction into reviewed rows with stable codes
 extraction_scope.py  what is in scope: skipped, screened and full sections, tables, obligation and limit rules
+categories.py    requirement types by keyword and pattern rules (model type as fallback)
+quality.py       quality flags (vague, missing unit, compound), computed on read
 verification.py  normalisation with index map, quote location (exact page span),
                  paraphrase support, modality, fragments
 language.py      Bosnian / English detection for the answer language
