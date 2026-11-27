@@ -22,19 +22,65 @@ export function matchesFilter(row: Pick<Reviewable, "status" | "not_found">, fil
   return row.status === filter;
 }
 
-export function filterRows<T extends Pick<Reviewable, "status" | "not_found">>(rows: T[], filter: StatusFilter): T[] {
-  return rows.filter((row) => matchesFilter(row, filter));
+/** A row's quality flags, as far as filtering and counting need them. */
+interface Flagged {
+  flags?: readonly unknown[];
 }
 
-/** Rows per filter. "not_found" rows are also counted under their status. */
-export function countRows(rows: Pick<Reviewable, "status" | "not_found">[]): Record<StatusFilter, number> {
-  const counts: Record<StatusFilter, number> = { all: 0, proposed: 0, accepted: 0, rejected: 0, not_found: 0 };
+const hasFlags = (row: Flagged) => (row.flags?.length ?? 0) > 0;
+
+/** Rows of a status filter; with `flaggedOnly`, only those that have quality flags. */
+export function filterRows<T extends Pick<Reviewable, "status" | "not_found"> & Flagged>(
+  rows: T[],
+  filter: StatusFilter,
+  flaggedOnly = false,
+): T[] {
+  return rows.filter((row) => matchesFilter(row, filter) && (!flaggedOnly || hasFlags(row)));
+}
+
+export type RowCounts = Record<StatusFilter | "flagged", number>;
+
+/** Rows per filter. "not_found" rows are also counted under their status; "flagged" counts
+ *  rows with quality flags. */
+export function countRows(rows: (Pick<Reviewable, "status" | "not_found"> & Flagged)[]): RowCounts {
+  const counts: RowCounts = { all: 0, proposed: 0, accepted: 0, rejected: 0, not_found: 0, flagged: 0 };
   for (const row of rows) {
     counts.all += 1;
     counts[row.status] += 1;
     if (row.not_found) counts.not_found += 1;
+    if (hasFlags(row)) counts.flagged += 1;
   }
   return counts;
+}
+
+/** A piece of text, and whether it is one of the words that set a quality flag. */
+export interface TextPiece {
+  text: string;
+  marked: boolean;
+}
+
+/** Split `text` into pieces so that the given [start, end) spans can be marked.
+ *  Overlapping or touching spans are merged; spans outside the text are ignored. */
+export function markSpans(text: string, spans: { start: number; end: number }[]): TextPiece[] {
+  const sorted = spans
+    .map(({ start, end }) => ({ start: Math.max(0, start), end: Math.min(text.length, end) }))
+    .filter(({ start, end }) => end > start)
+    .sort((a, b) => a.start - b.start);
+  const merged: { start: number; end: number }[] = [];
+  for (const span of sorted) {
+    const last = merged[merged.length - 1];
+    if (last && span.start <= last.end) last.end = Math.max(last.end, span.end);
+    else merged.push({ ...span });
+  }
+  const pieces: TextPiece[] = [];
+  let at = 0;
+  for (const { start, end } of merged) {
+    if (start > at) pieces.push({ text: text.slice(at, start), marked: false });
+    pieces.push({ text: text.slice(start, end), marked: true });
+    at = end;
+  }
+  if (at < text.length || pieces.length === 0) pieces.push({ text: text.slice(at), marked: false });
+  return pieces;
 }
 
 /** A review change as sent to the API: only the fields present are changed. */

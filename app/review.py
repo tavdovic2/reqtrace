@@ -26,7 +26,8 @@ from sqlalchemy.orm import Session
 
 from app.db import Document, Requirement, ReviewStatus, session_scope, utcnow
 from app.errors import NotFoundError, UnprocessableError
-from app.schemas import RequirementOut, RequirementUpdate, ReviewCounts
+from app.quality import row_flags
+from app.schemas import FlagOut, FlagWord, RequirementOut, RequirementUpdate, ReviewCounts
 from app.services import Services
 from app.verification import display_quote, normalize
 
@@ -136,13 +137,24 @@ def merge_extraction(
 
 
 def requirement_out(requirement: Requirement) -> RequirementOut:
-    """The API view of a row: quote on one line, the text to use filled in."""
+    """The API view of a row: quote on one line, the text to use and the quality flags
+    filled in. Flags are computed here, on read, so rule changes apply to every row."""
     out = RequirementOut.model_validate(requirement)
     quote = display_quote(out.quote)
+    flags = [
+        FlagOut(
+            code=flag.code,
+            source=flag.source,
+            explanation=flag.explanation,
+            words=[FlagWord(text=t.text, start=t.start, end=t.end) for t in flag.triggers],
+        )
+        for flag in row_flags(quote, out.paraphrase, out.edited_text)
+    ]
     return out.model_copy(
         update={
             "quote": quote,
             "requirement_text": out.edited_text or out.paraphrase or quote,
+            "flags": flags,
         }
     )
 
@@ -153,6 +165,7 @@ def count_by_status(requirements: Iterable[Requirement | RequirementOut]) -> Rev
         counts.total += 1
         setattr(counts, requirement.status, getattr(counts, requirement.status) + 1)
         counts.not_found += bool(requirement.not_found)
+        counts.flagged += bool(getattr(requirement, "flags", None))
     return counts
 
 
@@ -162,6 +175,8 @@ def matches_filter(requirement: Requirement | RequirementOut, status: str | None
         return True
     if status == "not_found":
         return bool(requirement.not_found)
+    if status == "flagged":
+        return bool(getattr(requirement, "flags", None))
     return requirement.status == status
 
 

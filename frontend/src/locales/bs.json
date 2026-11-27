@@ -132,7 +132,8 @@
       "interface": "Interfejs",
       "environmental": "Okolina",
       "other": "Ostalo",
-      "process": "Proces"
+      "process": "Proces",
+      "layout": "Raspored (PCB)"
     },
     "rejectedQuote_one": "{{count}} odbijen: citat nije na stranici",
     "rejectedQuote_few": "{{count}} odbijena: citat nije na stranici",
@@ -218,6 +219,29 @@
         "help": "Prikaži ili sakrij ovu listu"
       },
       "close": "Zatvori"
+    },
+    "flags": {
+      "filter": "Ima oznake",
+      "summary_one": "{{count}} s oznakom",
+      "summary_few": "{{count}} s oznakama",
+      "summary_other": "{{count}} s oznakama",
+      "badgeLabel": "Oznaka kvaliteta: {{flag}}. Prikaži objašnjenje",
+      "vague": {
+        "label": "Neodređeno",
+        "explanation": "Sadrži formulaciju koja se ne može provjeriti; navedite vrijednost ili jasan uslov."
+      },
+      "missing_unit": {
+        "label": "Nema jedinice",
+        "explanation": "Sadrži broj bez mjerne jedinice; dodajte jedinicu."
+      },
+      "compound": {
+        "label": "Složeno",
+        "explanation": "Navodi više obaveza; razdvojite ih da se svaka može provjeriti zasebno."
+      },
+      "source": {
+        "text": "Okidač: {{words}} u tekstu zahtjeva.",
+        "quote": "Okidač: {{words}} u citatu."
+      }
     }
   },
   "viewer": {

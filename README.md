@@ -85,8 +85,25 @@ reqTrace extracts exactly two kinds of item, and the table shows which one each 
   units. Typically this is a row of an absolute maximum ratings or recommended operating
   conditions table.
 
-Instructions about how the work is done (testing, committing, pushing, submitting,
-uploading) are obligations of type `process`, whatever type the model proposed.
+**Types.** Every row has one type, decided by keyword and pattern rules; the model's
+type is used only when no rule matches. When several rules match, the first type in this
+list wins:
+
+| Type | Covers |
+|---|---|
+| `process` | How the work is done: testing, committing, pushing, submitting, uploading |
+| `safety` | Protecting people or equipment: hazards, injury, ESD, damage |
+| `layout` | PCB layout and board design, placement of parts, soldering, thermal and exposed pads, copper planes, traces, vias, solder mask, air flow around the board |
+| `electrical` | Supply, voltage, current, power, resistors, capacitors, grounding |
+| `environmental` | Temperatures the product is exposed to, humidity, vibration, storage, materials |
+| `performance` | Speed, timing, accuracy, resolution, response time |
+| `interface` | Pins, buses, protocols, addresses, registers, APIs, data formats |
+| `functional` | A behaviour, feature or screen to build |
+| `other` | None of the above |
+
+So a bypass capacitor placed next to the supply pins is `layout`, a pull-up resistor on
+the SDA pin is `electrical`. On TMP117 the PCB rules on pages 34 to 37, typed
+`functional` by the model before, are `layout`.
 
 **Timing tables are never limits.** Rows of a timing-requirements or
 switching-characteristics table (clock frequency, hold time, rise time) describe bus
@@ -165,7 +182,25 @@ Its "Requirement" column is the edited text where there is one, otherwise the or
 text (the paraphrase, else the quote), and it always includes the verbatim quote and the
 page. "All rows with status" (`?scope=all`) contains every row and adds the review status,
 the reviewer note, the review time (UTC) and whether the latest extraction still found
-the row. "Verified (quote on page)" and "Review status" are separate columns.
+the row. "Verified (quote on page)" and "Review status" are separate columns. Both
+exports have the type, a "Flags" column (codes, comma-separated) and a "Flag details"
+column (the English explanations with the words that set each flag).
+
+**Quality flags.** Rules (no model calls) mark wording a reviewer should look at. A
+flag never hides, blocks or removes a row.
+
+| Flag | Set by | Not set by |
+|---|---|---|
+| `vague` | Wording that cannot be verified: "fast", "adequate", "sufficient", "appropriate", "if possible", "as close as possible", "as needed", "minimal", "significant", "usually", "etc." | Names such as "Fast-mode", "Fast-mode Plus", "high-speed mode", register names in capitals |
+| `missing_unit` | A number that should carry a unit and does not ("wait at least 2 after power-up") | Counts ("four devices", "8-sample averaging"), references ("Table 7-2", "Section 5.1", "Lab 5"), register bits ("15:12", "CONV[2:0]"), codes ("Rev. D", "SIL 2", "IEC 61508"), ratios and percentages, values whose unit follows a range ("1.8 to 5.5 V") |
+| `compound` | Several obligations in one row: two sentences that each state one, or a second instruction or "must" after "and" or ";" | One instruction with a list ("add a header, empty, loading and error states") |
+
+Flags are computed when a row is read, not stored, so a change to the rules applies to
+existing rows at once and an edited text is checked as soon as it is saved. Without an
+edit the quote is checked (and a paraphrase, if any); with an edit only the edited text
+is, so fixing the wording removes the flag. Each flag says which text set it. In the
+table, flags are small markers whose explanation opens on hover, keyboard focus or a tap;
+the words that set them are underlined in the text, and "Has flags" filters the rows.
 
 ## Architecture
 
@@ -352,7 +387,7 @@ larger. To measure your own machine: `python -m eval.bench_ingestion --pdf <file
 | `DELETE /documents/{id}` | Delete a document with its vectors and file |
 | `POST /ask` | `question`, optional `drawer_id`, optional `doc_ids` → `answer`, `answered`, `sources` (each with `filename`, `doc_id`, `page`, `snippet`, and `highlights`: every evidence passage the answer relies on from that page, exactly as in the page text, for the page view to mark; `highlight` is the first of them) and `lines` (one per claim, with the indexes of its sources). With `"debug": true` (off by default) also `debug`: the searched phrasings, the retrieved chunks with rank, page and score, and each discarded claim with its reason |
 | `POST /documents/{id}/requirements` | Start extraction (`202`); poll the GET endpoint for progress |
-| `GET /documents/{id}/requirements` | The table (`id`, `code`, `kind`, `quote`, `page`, `type`, `paraphrase`, `verified`, `status`, `edited_text`, `reviewer_note`, `reviewed_at`, `not_found`, `requirement_text`), rejection counts, `skipped_sections`, `elapsed_seconds`, `counts` per review status and the merge of the latest extraction (`kept`, `added`, `no_longer_found`). `?status=proposed\|accepted\|rejected\|not_found` filters the rows. `?format=csv` or `?format=xlsx` downloads the accepted rows; add `&scope=all` for every row with its review status, note and time |
+| `GET /documents/{id}/requirements` | The table (`id`, `code`, `kind`, `quote`, `page`, `type`, `paraphrase`, `verified`, `status`, `edited_text`, `reviewer_note`, `reviewed_at`, `not_found`, `requirement_text`), rejection counts, `skipped_sections`, `elapsed_seconds`, `flags` (code, source, explanation and the words that set it), `counts` per review status (and `flagged`) and the merge of the latest extraction (`kept`, `added`, `no_longer_found`). `?status=proposed\|accepted\|rejected\|not_found\|flagged` filters the rows. `?format=csv` or `?format=xlsx` downloads the accepted rows; add `&scope=all` for every row with its review status, note and time |
 | `PATCH /requirements/{id}` | Review one row: `status`, `edited_text` (`null` restores the original), `reviewer_note`. Fields left out are unchanged; a status records `reviewed_at`, `proposed` clears it. The quote and the page cannot be changed |
 | `POST /documents/{id}/requirements/review` | `ids` and `status`: the same status for several rows in one transaction. If any id belongs to another document, nothing changes (`422`) |
 
@@ -634,6 +669,10 @@ normal server, so extraction stays sequential (`EXTRACTION_CONCURRENCY=1`).
 - **No authentication.** Anyone who can reach the ports can read and delete documents.
   Run it on a trusted machine or network.
 - **Conversation history lives in the browser tab** and is lost on reload.
+- **Types and flags are keyword rules.** They are fast and predictable, but a
+  sentence can match the wrong set of words ("temperature" in a temperature sensor's
+  programming rule, "air flow" in a measurement condition), and wording the lists do not
+  know is not flagged. Flags inform; the reviewer decides.
 - **Review has no user accounts.** A review records when a decision was made, not who
   made it, and there is no history of earlier decisions; the last change wins.
 - **Matching after re-extraction is exact.** A row is matched by page and normalised

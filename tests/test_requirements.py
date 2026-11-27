@@ -98,6 +98,7 @@ def test_obligation_is_saved_with_exact_quote_and_kind(
             "reviewed_at": None,
             "not_found": False,
             "requirement_text": REAL_QUOTE,
+            "flags": [],
             "id": table["requirements"][0]["id"],
         }
     ]
@@ -477,6 +478,8 @@ def test_csv_export_keeps_verified_and_review_status_apart() -> None:
             "2",
             'Supply, max 3.6 V; "strict"',
             "yes",
+            "",
+            "",
         ],
     ]
     assert "Verified (quote on page)" in COLUMNS and "Review status" not in COLUMNS
@@ -651,7 +654,8 @@ def test_ratings_table_rows_are_limits_without_a_model_call(
     table = client.get(f"/documents/{document['id']}/requirements").json()
     assert [(r["kind"], r["type"], r["quote"]) for r in table["requirements"]] == [
         ("limit", "electrical", "Supply voltage, V+ -0.3 6 V"),
-        ("limit", "other", "Storage temperature -65 150 C"),
+        # "temperature" makes it environmental even though "C" alone is not read as °C.
+        ("limit", "environmental", "Storage temperature -65 150 C"),
     ]
     assert fake_llm.prompts == []
 

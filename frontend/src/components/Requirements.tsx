@@ -9,6 +9,7 @@ import {
   type Drawer,
   type ExportScope,
   type Requirement,
+  type RequirementFlag,
   type RequirementsTable,
 } from "../api";
 import { useErrorMessage } from "../hooks";
@@ -21,6 +22,7 @@ import {
   moveIndex,
   replaceRows,
   restoreRows,
+  markSpans,
   reviewKeyAction,
   type ReviewPatch,
   type ReviewStatus,
@@ -217,6 +219,7 @@ function ReviewTable({
   const exportId = useId();
   const helpId = useId();
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [focusedId, setFocusedId] = useState<number | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
@@ -230,7 +233,7 @@ function ReviewTable({
   const pendingFocus = useRef<number | null>(null);
 
   const rows = table.requirements;
-  const visible = filterRows(rows, filter);
+  const visible = filterRows(rows, filter, flaggedOnly);
   const counts = countRows(rows);
   const activeId = visible.some((r) => r.id === focusedId) ? focusedId : (visible[0]?.id ?? null);
   const visibleSelected = visible.filter((r) => selected.has(r.id));
@@ -467,6 +470,7 @@ function ReviewTable({
             rejected: counts.rejected,
           })}
           {counts.not_found > 0 && ` · ${t("requirements.review.summaryNotFound", { count: counts.not_found })}`}
+          {counts.flagged > 0 && ` · ${t("requirements.flags.summary", { count: counts.flagged })}`}
           {merged && (
             <span className="muted">
               {" · "}
@@ -502,6 +506,15 @@ function ReviewTable({
                   {t(`requirements.review.filters.${value}`)} <span className="filter-count">{counts[value]}</span>
                 </button>
               ))}
+              <button
+                type="button"
+                className="filter-chip flag-filter"
+                aria-pressed={flaggedOnly}
+                onClick={() => setFlaggedOnly((on) => !on)}
+              >
+                <span aria-hidden="true">⚑</span> {t("requirements.flags.filter")}{" "}
+                <span className="filter-count">{counts.flagged}</span>
+              </button>
             </div>
             <div className="review-bulk">
               <label className="select-visible">
@@ -726,17 +739,32 @@ function ReviewRow({
           editor
         ) : req.edited_text !== null ? (
           <p className="edited-text">
-            <span className="edited-tag">{t("requirements.review.edited")}</span> {req.edited_text}
+            <span className="edited-tag">{t("requirements.review.edited")}</span>{" "}
+            <FlagWords text={req.edited_text} flags={req.flags} source="text" />
           </p>
         ) : null}
         {(req.edited_text !== null || editing?.field === "text") && (
           <p className="original-label">{t("requirements.review.originalQuote")}</p>
         )}
-        <q className="quote">{req.quote}</q>
+        <q className="quote">
+          <FlagWords text={req.quote} flags={req.flags} source="quote" />
+        </q>
         {req.paraphrase && (
           <p className="cell-paraphrase">
-            {t("requirements.columns.paraphrase")}: {req.paraphrase}
+            {t("requirements.columns.paraphrase")}:{" "}
+            {req.edited_text === null ? (
+              <FlagWords text={req.paraphrase} flags={req.flags} source="text" />
+            ) : (
+              req.paraphrase
+            )}
           </p>
+        )}
+        {req.flags.length > 0 && (
+          <div className="flag-list">
+            {req.flags.map((flag) => (
+              <FlagBadge key={`${flag.code}-${flag.source}`} flag={flag} />
+            ))}
+          </div>
         )}
         {editing?.field === "note"
           ? editor
@@ -826,6 +854,76 @@ function ReviewRow({
         {req.verified && <span className="stamp">{t("requirements.verified")}</span>}
       </td>
     </tr>
+  );
+}
+
+/** `text` with the words that set the flags from `source` marked. */
+function FlagWords({
+  text,
+  flags,
+  source,
+}: {
+  text: string;
+  flags: RequirementFlag[];
+  source: RequirementFlag["source"];
+}) {
+  const spans = flags.filter((flag) => flag.source === source).flatMap((flag) => flag.words);
+  if (spans.length === 0) return <>{text}</>;
+  return (
+    <>
+      {markSpans(text, spans).map((piece, index) =>
+        piece.marked ? (
+          <mark key={index} className="flag-word">
+            {piece.text}
+          </mark>
+        ) : (
+          <span key={index}>{piece.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+/** A flag marker whose explanation opens on hover, on keyboard focus and on a tap or click. */
+function FlagBadge({ flag }: { flag: RequirementFlag }) {
+  const { t } = useTranslation();
+  const tipId = useId();
+  const [open, setOpen] = useState(false);
+  const words = flag.words.map((word) => `“${word.text}”`).join(", ");
+  return (
+    // Hover opens it only for a real mouse: a tap also fires emulated mouse events, which
+    // would open it just before the click toggles it shut again.
+    <span
+      className="flag"
+      onPointerEnter={(event) => event.pointerType === "mouse" && setOpen(true)}
+      onPointerLeave={(event) => event.pointerType === "mouse" && setOpen(false)}
+    >
+      <button
+        type="button"
+        className="flag-badge"
+        aria-expanded={open}
+        aria-describedby={open ? tipId : undefined}
+        aria-label={t("requirements.flags.badgeLabel", { flag: t(`requirements.flags.${flag.code}.label`) })}
+        onClick={() => setOpen((value) => !value)}
+        // Keyboard focus opens the explanation; a mouse click or a tap toggles it instead.
+        onFocus={(event) => event.currentTarget.matches(":focus-visible") && setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && open) {
+            event.stopPropagation();
+            setOpen(false);
+          }
+        }}
+      >
+        <span aria-hidden="true">⚑</span> {t(`requirements.flags.${flag.code}.label`)}
+      </button>
+      {open && (
+        <span role="tooltip" id={tipId} className="flag-tip">
+          {t(`requirements.flags.${flag.code}.explanation`)}{" "}
+          <span className="flag-tip-words">{t(`requirements.flags.source.${flag.source}`, { words })}</span>
+        </span>
+      )}
+    </span>
   );
 }
 

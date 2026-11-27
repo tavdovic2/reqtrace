@@ -8,6 +8,9 @@ Two scopes:
 - **all**: every row, with its review status, reviewer note, review time and whether
   the latest extraction still found it.
 
+Both carry the type and the quality flags (codes, and their English explanations with the
+words that set them).
+
 "Verified" (the quote was found on its page, automatic) and "Review status" (a person's
 decision) are separate columns and never merged.
 """
@@ -34,14 +37,30 @@ COLUMNS = [
     "Page",
     "Paraphrase (model)",
     "Verified (quote on page)",
+    "Flags",
+    "Flag details",
 ]
 REVIEW_COLUMNS = ["Review status", "Reviewer note", "Reviewed at (UTC)", "In latest extraction"]
-COLUMN_WIDTHS = [10, 11, 14, 60, 8, 70, 6, 50, 12]
+COLUMN_WIDTHS = [10, 11, 14, 60, 8, 70, 6, 50, 12, 18, 60]
 REVIEW_COLUMN_WIDTHS = [14, 40, 20, 12]
 
 
 def _yes(value: bool) -> str:
     return "yes" if value else "no"
+
+
+def flag_codes(requirement: RequirementOut) -> str:
+    """The row's quality flag codes, comma-separated ("vague, compound")."""
+    return ", ".join(flag.code for flag in requirement.flags)
+
+
+def flag_details(requirement: RequirementOut) -> str:
+    """Each flag with the text that set it, its explanation and its words, in English."""
+    return "; ".join(
+        f"{flag.code} ({flag.source}): {flag.explanation} Words: "
+        + ", ".join(f'"{word.text}"' for word in flag.words)
+        for flag in requirement.flags
+    )
 
 
 def select_rows(requirements: list[RequirementOut], scope: ExportScope) -> list[RequirementOut]:
@@ -66,6 +85,8 @@ def _rows(requirements: list[RequirementOut], scope: ExportScope) -> list[list[o
             r.page,
             r.paraphrase,
             _yes(r.verified),
+            flag_codes(r),
+            flag_details(r),
         ]
         if scope == "all":
             reviewed = r.reviewed_at.strftime("%Y-%m-%d %H:%M:%S") if r.reviewed_at else ""

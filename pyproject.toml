@@ -49,6 +49,7 @@ ignore = ["ANN401", "SIM905"]
 # These files map typographic characters on purpose.
 "app/verification.py" = ["RUF001"]
 "app/extraction_scope.py" = ["RUF001"]
+"app/quality.py" = ["RUF001"]
 "tests/test_verification.py" = ["RUF001"]
 "tests/test_eval.py" = ["RUF001"]
 "tests/test_eval_matching.py" = ["RUF001"]
