@@ -6,6 +6,7 @@ import {
   countRows,
   filterRows,
   isTypingTarget,
+  markSpans,
   moveIndex,
   restoreRows,
   reviewKeyAction,
@@ -42,8 +43,8 @@ test("the status filter shows the rows of one status, or the rows no longer foun
 });
 
 test("counts cover every filter; rows no longer found also count under their status", () => {
-  assert.deepEqual(countRows(ROWS), { all: 4, proposed: 1, accepted: 2, rejected: 1, not_found: 2 });
-  assert.deepEqual(countRows([]), { all: 0, proposed: 0, accepted: 0, rejected: 0, not_found: 0 });
+  assert.deepEqual(countRows(ROWS), { all: 4, proposed: 1, accepted: 2, rejected: 1, not_found: 2, flagged: 0 });
+  assert.deepEqual(countRows([]), { all: 0, proposed: 0, accepted: 0, rejected: 0, not_found: 0, flagged: 0 });
 });
 
 test("an optimistic status change sets the review time, and reset clears it", () => {
@@ -131,4 +132,45 @@ test("moving stays inside the list and starts at the edge when nothing is focuse
   assert.equal(moveIndex(2, 1, 3), 2);
   assert.equal(moveIndex(1, 1, 3), 2);
   assert.equal(moveIndex(0, 1, 0), -1);
+});
+
+test("the flag filter combines with the status filter and flagged rows are counted", () => {
+  const rows = [
+    { ...row(1, "proposed"), flags: [{ code: "vague" }] },
+    { ...row(2, "accepted"), flags: [] },
+    { ...row(3, "accepted"), flags: [{ code: "compound" }] },
+  ];
+  assert.deepEqual(
+    filterRows(rows, "all", true).map((r) => r.id),
+    [1, 3],
+  );
+  assert.deepEqual(
+    filterRows(rows, "accepted", true).map((r) => r.id),
+    [3],
+  );
+  assert.deepEqual(
+    filterRows(rows, "accepted").map((r) => r.id),
+    [2, 3],
+  );
+  assert.equal(countRows(rows).flagged, 2);
+});
+
+test("flag words are marked by their spans, overlapping spans merged", () => {
+  const text = "Place it as close as possible, if possible.";
+  assert.deepEqual(
+    markSpans(text, [
+      { start: 9, end: 29 },
+      { start: 31, end: 42 },
+      { start: 12, end: 17 },
+    ]),
+    [
+      { text: "Place it ", marked: false },
+      { text: "as close as possible", marked: true },
+      { text: ", ", marked: false },
+      { text: "if possible", marked: true },
+      { text: ".", marked: false },
+    ],
+  );
+  assert.deepEqual(markSpans("abc", []), [{ text: "abc", marked: false }]);
+  assert.deepEqual(markSpans("abc", [{ start: 5, end: 9 }]), [{ text: "abc", marked: false }]);
 });

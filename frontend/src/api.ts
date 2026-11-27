@@ -106,6 +106,20 @@ export interface Requirement {
   not_found: boolean;
   /** The text to use: the edited text, else the paraphrase, else the quote. */
   requirement_text: string;
+  /** Quality flags, computed by the API when the row is read. */
+  flags: RequirementFlag[];
+}
+
+export type FlagCode = "vague" | "missing_unit" | "compound";
+
+export interface RequirementFlag {
+  code: FlagCode;
+  /** "text": the edited text (or the paraphrase); "quote": the verbatim quote. */
+  source: "text" | "quote";
+  /** English explanation, as in the exports. The UI shows its own translation. */
+  explanation: string;
+  /** Words that set the flag, as [start, end) spans of the text named by `source`. */
+  words: { text: string; start: number; end: number }[];
 }
 
 export interface ReviewCounts {
@@ -114,6 +128,7 @@ export interface ReviewCounts {
   accepted: number;
   rejected: number;
   not_found: number;
+  flagged: number;
 }
 
 export type ExportScope = "accepted" | "all";

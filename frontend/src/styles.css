@@ -1454,3 +1454,65 @@ kbd {
   font-family: var(--mono);
   font-size: 12px;
 }
+
+/* ---------- Quality flags (inform the reviewer; not the red stamp, not a review status) ---------- */
+
+.flag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.flag {
+  position: relative;
+  display: inline-block;
+}
+
+button.flag-badge {
+  padding: 0 6px;
+  border: 1px dashed var(--ink-muted);
+  border-radius: 3px;
+  background: var(--paper-shade);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+button.flag-badge[aria-expanded="true"] {
+  border-style: solid;
+  border-color: var(--ink);
+}
+
+.flag-tip {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: 18rem;
+  padding: 6px 8px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: #fffdf6;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.2);
+}
+
+.flag-tip-words {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-muted);
+}
+
+/* Words that set a flag: a wavy underline, so it is not mistaken for the yellow source mark. */
+mark.flag-word {
+  background: none;
+  color: inherit;
+  text-decoration: underline wavy var(--manila-dark);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}

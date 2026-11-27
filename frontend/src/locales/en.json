@@ -129,7 +129,8 @@
       "interface": "Interface",
       "environmental": "Environmental",
       "other": "Other",
-      "process": "Process"
+      "process": "Process",
+      "layout": "Layout"
     },
     "rejectedQuote_one": "{{count}} rejected: quote not on the page",
     "rejectedQuote_other": "{{count}} rejected: quote not on the page",
@@ -210,6 +211,28 @@
         "help": "Show or hide this list"
       },
       "close": "Close"
+    },
+    "flags": {
+      "filter": "Has flags",
+      "summary_one": "{{count}} with flags",
+      "summary_other": "{{count}} with flags",
+      "badgeLabel": "Quality flag: {{flag}}. Show explanation",
+      "vague": {
+        "label": "Vague",
+        "explanation": "Contains wording that cannot be verified; state a value or a clear condition."
+      },
+      "missing_unit": {
+        "label": "Unit missing",
+        "explanation": "Contains a number without a unit; add the unit."
+      },
+      "compound": {
+        "label": "Compound",
+        "explanation": "States several obligations; split it so each can be verified on its own."
+      },
+      "source": {
+        "text": "Set by {{words}} in the requirement text.",
+        "quote": "Set by {{words}} in the quote."
+      }
     }
   },
   "viewer": {
