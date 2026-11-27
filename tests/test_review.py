@@ -65,6 +65,7 @@ def test_new_rows_are_proposed_and_verified_is_separate(extracted: dict) -> None
         "accepted": 0,
         "rejected": 0,
         "not_found": 0,
+        "flagged": 0,
     }
     assert (extracted["kept"], extracted["added"], extracted["no_longer_found"]) == (0, 3, 0)
 
@@ -190,6 +191,7 @@ def test_table_filters_by_status_and_counts_all_rows(client: TestClient, extract
         "accepted": 1,
         "rejected": 1,
         "not_found": 0,
+        "flagged": 0,
     }
     proposed = client.get(f"/documents/{doc}/requirements?status=proposed").json()
     assert [r["code"] for r in proposed["requirements"]] == ["REQ-003"]
@@ -359,3 +361,36 @@ def test_existing_rows_become_proposed_after_the_migration(tmp_path: Path) -> No
         )
         assert row.not_found is False
         assert row.verified is True
+
+
+def test_flags_are_returned_recomputed_after_an_edit_filtered_and_exported(
+    client: TestClient, fake_llm: FakeLLM, tmp_path: Path
+) -> None:
+    vague = "Place the capacitor as close as possible to the supply pin."
+    clean = "Connect the thermal pad to the ground plane."
+    pdf = make_pdf(tmp_path / "flags.pdf", [["9 Layout", vague, clean]])
+    drawer = client.post("/drawers", json={"name": "Flags"}).json()
+    doc = upload(client, drawer["id"], pdf)["id"]
+    table = run_extraction(client, fake_llm, doc, vague, clean)
+    rows = rows_by_quote(table)
+    flag = rows[vague]["flags"][0]
+    assert (flag["code"], flag["source"]) == ("vague", "quote")
+    assert flag["words"][0]["text"] == "as close as possible"
+    assert vague[flag["words"][0]["start"] : flag["words"][0]["end"]] == "as close as possible"
+    assert rows[clean]["flags"] == []
+    assert rows[vague]["type"] == rows[clean]["type"] == "layout"
+    assert table["counts"]["flagged"] == 1
+    flagged = client.get(f"/documents/{doc}/requirements?status=flagged").json()
+    assert [r["quote"] for r in flagged["requirements"]] == [vague]
+
+    exported = csv_rows(client, doc, "&scope=all")
+    by_quote = {row[COLUMNS.index("Quote (verbatim)")]: row for row in exported[1:]}
+    assert by_quote[vague][COLUMNS.index("Flags")] == "vague"
+    assert "as close as possible" in by_quote[vague][COLUMNS.index("Flag details")]
+    assert by_quote[clean][COLUMNS.index("Flags")] == ""
+
+    fixed = patch(
+        client, rows[vague]["id"], {"edited_text": "Place the capacitor within 2 mm of the pin."}
+    )
+    assert fixed["flags"] == []
+    assert client.get(f"/documents/{doc}/requirements").json()["counts"]["flagged"] == 0

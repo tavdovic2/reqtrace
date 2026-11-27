@@ -29,6 +29,7 @@ from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
 from sqlalchemy import select
 
+from app.categories import assign_type
 from app.config import Settings
 from app.db import Document, DocumentStatus, ExtractionStatus, session_scope, utcnow
 from app.documents import file_path
@@ -41,7 +42,6 @@ from app.extraction_scope import (
     invents_obligation,
     is_limit_section,
     is_passive_recommendation,
-    is_process_instruction,
     limit_rows,
     non_requirement_table,
     screened_text,
@@ -57,7 +57,7 @@ from app.review import (
     merge_extraction,
     requirement_out,
 )
-from app.schemas import RequirementsResponse, RequirementType, StatusFilter
+from app.schemas import ModelType, RequirementsResponse, StatusFilter
 from app.services import Services
 from app.vector_store import ChunkPayload, VectorStoreUnavailableError
 from app.verification import (
@@ -174,13 +174,13 @@ _OBJECTIVE_SECTION = re.compile(r"objective|learning outcome", re.IGNORECASE)
 
 class ExtractedItem(BaseModel):
     quote: str
-    type: RequirementType
+    type: ModelType
 
 
 class ExtractedItemWithParaphrase(BaseModel):
     quote: str
     paraphrase: str
-    type: RequirementType
+    type: ModelType
 
 
 class ExtractionResult(BaseModel):
@@ -193,7 +193,7 @@ class ExtractionResultWithParaphrase(BaseModel):
 
 class ScreenedItem(BaseModel):
     sentence: int
-    type: RequirementType
+    type: ModelType
 
 
 class ScreenedResult(BaseModel):
@@ -536,7 +536,9 @@ def judge(
         logger.info("Paraphrase removed (page %d): %r", chunk.page, proposed)
     # Instructions about testing, committing or submitting are process steps whatever
     # type the model proposed, so the same sentence always gets the same type.
-    req_type = "process" if is_process_instruction(quote) else item.type
+    # Rules decide the type (a testing or committing instruction is always "process", a PCB
+    # rule "layout"); the model's type is used only when no rule matches.
+    req_type = assign_type(quote, item.type)
     return Candidate(kind.value, paraphrase, req_type, chunk.page, quote, start, end), removed
 
 
@@ -675,7 +677,15 @@ def limit_table_rows(
         kind = classify(quote, chunk.section)
         if kind is not None:
             found.append(
-                Candidate(kind.value, "", type_from_unit(quote), chunk.page, quote, start, end)
+                Candidate(
+                    kind.value,
+                    "",
+                    assign_type(quote, type_from_unit(quote)),
+                    chunk.page,
+                    quote,
+                    start,
+                    end,
+                )
             )
     return found, missing
 
@@ -891,6 +901,7 @@ def get_requirements(
         if document is None:
             raise NotFoundError(f"Document {doc_id} does not exist.")
         rows = sorted(document.requirements, key=lambda r: (r.page, code_number(r.code)))
+        outs = [requirement_out(r) for r in rows]
         return RequirementsResponse(
             document_id=doc_id,
             status=document.extraction_status,
@@ -906,6 +917,6 @@ def get_requirements(
             kept=document.extraction_kept,
             added=document.extraction_added,
             no_longer_found=document.extraction_not_found,
-            counts=count_by_status(rows),
-            requirements=[requirement_out(r) for r in rows if matches_filter(r, status)],
+            counts=count_by_status(outs),
+            requirements=[r for r in outs if matches_filter(r, status)],
         )

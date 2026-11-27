@@ -5,7 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-RequirementType = Literal[
+# Types the model may propose; the extraction prompt and its JSON schema use this list.
+ModelType = Literal[
     "functional",
     "performance",
     "electrical",
@@ -15,13 +16,27 @@ RequirementType = Literal[
     "process",
     "other",
 ]
+# Types a stored requirement can have: the model's list plus "layout", which only the
+# rules in app/categories.py assign.
+RequirementType = Literal[
+    "functional",
+    "performance",
+    "electrical",
+    "interface",
+    "environmental",
+    "safety",
+    "layout",
+    "process",
+    "other",
+]
+FlagCode = Literal["vague", "missing_unit", "compound"]
 
 
 # A person's decision on a requirement. Independent of `verified`, which is automatic.
 ReviewStatus = Literal["proposed", "accepted", "rejected"]
 # Filters of the requirement table: a status, or the reviewed rows that the latest
 # extraction did not find again.
-StatusFilter = Literal["proposed", "accepted", "rejected", "not_found"]
+StatusFilter = Literal["proposed", "accepted", "rejected", "not_found", "flagged"]
 EDITED_TEXT_MAX = 5000
 NOTE_MAX = 2000
 
@@ -154,6 +169,26 @@ class AskResponse(BaseModel):
     debug: AskDebug | None = None
 
 
+class FlagWord(BaseModel):
+    """Words that set a flag, as a [start, end) span of the checked text."""
+
+    text: str
+    start: int
+    end: int
+
+
+class FlagOut(BaseModel):
+    """A quality flag: informs the reviewer, never hides or blocks a row."""
+
+    code: FlagCode
+    source: Literal["text", "quote"] = Field(
+        description="Which text set it: `text` is the edited text (or the paraphrase), "
+        "`quote` the verbatim quote; spans in `words` refer to that text."
+    )
+    explanation: str
+    words: list[FlagWord]
+
+
 class RequirementOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -183,6 +218,11 @@ class RequirementOut(BaseModel):
     requirement_text: str = Field(
         default="",
         description="The text to use: the edited text, else the paraphrase, else the quote.",
+    )
+    flags: list[FlagOut] = Field(
+        default_factory=list,
+        description="Quality flags (vague wording, missing unit, several obligations), "
+        "computed when the row is read.",
     )
 
 
@@ -240,6 +280,7 @@ class ReviewCounts(BaseModel):
     accepted: int = 0
     rejected: int = 0
     not_found: int = 0
+    flagged: int = 0
 
 
 class RequirementsResponse(BaseModel):
