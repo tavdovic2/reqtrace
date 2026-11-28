@@ -89,6 +89,11 @@ class Settings(BaseSettings):
     extraction_group_chars: int = Field(default=3000, ge=500)
     extraction_concurrency: int = Field(default=1, ge=1, le=4)
     dedup_threshold: float = Field(default=92.0, ge=0, le=100)
+    # Revision comparison (app/compare.py): the least similarity (0-100) for two rows to be
+    # the same requirement, and for an unmatched row to name its closest counterpart as a
+    # possible split or merge. See README, "Comparing revisions".
+    compare_min_score: float = Field(default=75.0, ge=0, le=100)
+    compare_related_score: float = Field(default=60.0, ge=0, le=100)
 
     cors_origins: list[str] = ["http://localhost:5173"]
 

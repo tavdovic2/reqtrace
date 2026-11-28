@@ -99,6 +99,8 @@ def test_obligation_is_saved_with_exact_quote_and_kind(
             "not_found": False,
             "requirement_text": REAL_QUOTE,
             "flags": [],
+            "carried_from": None,
+            "recheck_reason": None,
             "id": table["requirements"][0]["id"],
         }
     ]

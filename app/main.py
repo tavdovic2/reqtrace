@@ -12,7 +12,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Query, Request, Upl
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 
-from app import documents, export, requirements, review
+from app import compare, documents, export, requirements, review
 from app.config import Settings
 from app.errors import ReqTraceError
 from app.llm import LLMOutputError, LLMUnavailableError
@@ -21,6 +21,8 @@ from app.schemas import (
     AskRequest,
     AskResponse,
     BulkReview,
+    CompareRequest,
+    CompareResponse,
     DocumentOut,
     DrawerCreate,
     DrawerOut,
@@ -355,6 +357,59 @@ def _register_routes(app: FastAPI) -> None:
         """
         review.bulk_review(services, doc_id, body.ids, body.status)
         return requirements.get_requirements(services, doc_id)
+
+    @app.post(
+        "/compare",
+        response_model=CompareResponse,
+        responses={**ERROR_RESPONSES, 409: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
+        tags=["compare"],
+    )
+    def compare_revisions(body: CompareRequest, services: ServicesDep) -> CompareResponse:
+        """Compare the requirements of two documents (two revisions), in any drawers.
+
+        Both must have finished requirement extraction (409 otherwise). With `carry_over`
+        (default), review decisions of unchanged rows are copied to the newer document and
+        changed rows are marked for review again; the older document is never changed.
+        """
+        result = compare.compare_documents(
+            services, body.old_document_id, body.new_document_id, body.carry_over
+        )
+        return compare.to_response(result)
+
+    @app.get(
+        "/compare/{old_document_id}/{new_document_id}",
+        response_model=CompareResponse,
+        responses={
+            **ERROR_RESPONSES,
+            409: {"model": ErrorResponse},
+            200: {"content": {"text/csv": {}, XLSX_MEDIA_TYPE: {}}},
+        },
+        tags=["compare"],
+    )
+    def get_comparison(
+        old_document_id: int,
+        new_document_id: int,
+        services: ServicesDep,
+        format: Annotated[Literal["json", "csv", "xlsx"], Query()] = "json",
+    ) -> CompareResponse | Response:
+        """The comparison without changing any review data, as JSON or a CSV / Excel file."""
+        result = compare.to_response(
+            compare.compare_documents(services, old_document_id, new_document_id, False)
+        )
+        if format == "json":
+            return result
+        name = f"{Path(result.old_filename).stem}_vs_{Path(result.new_filename).stem}_compare"
+        if format == "csv":
+            content: str | bytes = export.compare_to_csv(result.rows)
+            media_type = "text/csv; charset=utf-8"
+        else:
+            content = export.compare_to_xlsx(result.rows)
+            media_type = XLSX_MEDIA_TYPE
+        return Response(
+            content,
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{name}.{format}"'},
+        )
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")

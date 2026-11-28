@@ -137,6 +137,10 @@ class Requirement(Base):
     reviewed_at: Mapped[datetime | None] = mapped_column(default=None)
     # A reviewed row that the latest extraction did not find again is kept with this flag.
     not_found: Mapped[bool] = mapped_column(default=False, server_default="0")
+    # Set by a revision comparison (app/compare.py): the older row whose decision was
+    # copied here, or why this row needs review again although the older one was reviewed.
+    carried_from: Mapped[str | None] = mapped_column(Text, default=None)
+    recheck_reason: Mapped[str | None] = mapped_column(Text, default=None)
 
     document: Mapped[Document] = relationship(back_populates="requirements")
 
@@ -173,6 +177,8 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
         "reviewer_note": "TEXT",
         "reviewed_at": "DATETIME",
         "not_found": "BOOLEAN NOT NULL DEFAULT 0",
+        "carried_from": "TEXT",
+        "recheck_reason": "TEXT",
     },
 }
 
