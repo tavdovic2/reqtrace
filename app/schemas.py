@@ -224,6 +224,13 @@ class RequirementOut(BaseModel):
         description="Quality flags (vague wording, missing unit, several obligations), "
         "computed when the row is read.",
     )
+    carried_from: str | None = Field(
+        default=None, description="The older revision's row whose decision was copied here."
+    )
+    recheck_reason: str | None = Field(
+        default=None,
+        description="Why this row needs review again after a revision comparison.",
+    )
 
 
 class RequirementUpdate(BaseModel):
@@ -316,3 +323,71 @@ class HealthResponse(BaseModel):
     ollama: bool
     llm_model: str
     llm_model_available: bool
+
+
+class CompareRequest(BaseModel):
+    old_document_id: int = Field(description="The older revision.")
+    new_document_id: int = Field(description="The newer revision.")
+    carry_over: bool = Field(
+        default=True,
+        description="Copy review decisions of unchanged rows to the newer document and mark "
+        "changed rows for review again.",
+    )
+
+
+class CompareSide(BaseModel):
+    id: int
+    code: str
+    kind: str
+    type: str
+    page: int
+    quote: str
+    section: str = Field(description="Last heading of the row's section, without its number.")
+    status: str = Field(description="Review status of this row (after any carry-over).")
+    reviewer_note: str | None = None
+    edited_text: str | None = None
+
+
+class ValueChangeOut(BaseModel):
+    old: str | None = Field(description="Old value with its unit; null when the value is new.")
+    new: str | None = Field(description="New value with its unit; null when it was removed.")
+
+
+class WordOpOut(BaseModel):
+    op: Literal["equal", "delete", "insert", "replace"]
+    old: str
+    new: str
+
+
+class CompareRow(BaseModel):
+    cls: Literal["unchanged", "changed", "added", "removed"] = Field(alias="class")
+    old: CompareSide | None
+    new: CompareSide | None
+    score: float | None = Field(default=None, description="Match similarity, 0-100.")
+    changes: list[str] = Field(
+        default_factory=list, description="value, unit, condition, wording, modality."
+    )
+    values: list[ValueChangeOut] = Field(default_factory=list)
+    words: list[WordOpOut] = Field(default_factory=list, description="Word-level quote diff.")
+    related_code: str | None = Field(
+        default=None,
+        description="For an added or removed row: the closest row of the other document, "
+        "when it is close enough to be a split or a merge.",
+    )
+    carried: Literal["carried", "recheck", ""] = Field(
+        default="",
+        description="carried: the older decision was copied to the newer row; recheck: the "
+        "row changed and needs review again.",
+    )
+
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+
+class CompareResponse(BaseModel):
+    old_document_id: int
+    old_filename: str
+    new_document_id: int
+    new_filename: str
+    counts: dict[str, int] = Field(description="Rows per class.")
+    carried_over: int = Field(description="Review decisions copied to the newer document.")
+    rows: list[CompareRow]

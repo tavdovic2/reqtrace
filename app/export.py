@@ -23,7 +23,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 
-from app.schemas import RequirementOut
+from app.schemas import CompareRow, RequirementOut
 
 ExportScope = Literal["accepted", "all"]
 
@@ -117,6 +117,82 @@ def to_xlsx(requirements: list[RequirementOut], scope: ExportScope = "accepted")
         cell.font = Font(bold=True)
     widths = COLUMN_WIDTHS + (REVIEW_COLUMN_WIDTHS if scope == "all" else [])
     for index, width in enumerate(widths, start=1):
+        sheet.column_dimensions[get_column_letter(index)].width = width
+    for row in sheet.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
+    sheet.freeze_panes = "A2"
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+# ---------- revision comparison ----------
+
+COMPARE_COLUMNS = [
+    "Class",
+    "Old code",
+    "New code",
+    "Old quote",
+    "New quote",
+    "Old page",
+    "New page",
+    "Changed values",
+    "Changes",
+    "Related code",
+    "Carried-over status",
+]
+COMPARE_WIDTHS = [11, 10, 10, 60, 60, 8, 8, 30, 20, 10, 40]
+
+
+def _carried(row: CompareRow) -> str:
+    if row.carried == "carried" and row.new is not None:
+        return f"carried over: {row.new.status}"
+    if row.carried == "recheck" and row.old is not None:
+        return f"review again (was {row.old.status})"
+    return ""
+
+
+def _compare_rows(rows: list[CompareRow]) -> list[list[object]]:
+    return [
+        [
+            row.cls,
+            row.old.code if row.old else "",
+            row.new.code if row.new else "",
+            row.old.quote if row.old else "",
+            row.new.quote if row.new else "",
+            row.old.page if row.old else "",
+            row.new.page if row.new else "",
+            "; ".join(f"{v.old or '-'} -> {v.new or '-'}" for v in row.values),
+            ", ".join(row.changes),
+            row.related_code or "",
+            _carried(row),
+        ]
+        for row in rows
+    ]
+
+
+def compare_to_csv(rows: list[CompareRow]) -> str:
+    """The comparison as CSV (UTF-8 with BOM)."""
+    buffer = io.StringIO()
+    buffer.write("﻿")
+    writer = csv.writer(buffer)
+    writer.writerow(COMPARE_COLUMNS)
+    writer.writerows(_compare_rows(rows))
+    return buffer.getvalue()
+
+
+def compare_to_xlsx(rows: list[CompareRow]) -> bytes:
+    """The comparison as an Excel workbook."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Comparison"
+    sheet.append(COMPARE_COLUMNS)
+    for row in _compare_rows(rows):
+        sheet.append(row)
+    for cell in sheet[1]:
+        cell.font = Font(bold=True)
+    for index, width in enumerate(COMPARE_WIDTHS, start=1):
         sheet.column_dimensions[get_column_letter(index)].width = width
     for row in sheet.iter_rows(min_row=2):
         for cell in row:
